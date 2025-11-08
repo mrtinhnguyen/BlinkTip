@@ -5,7 +5,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test-db": "tsx --env-file=.env scripts/test-db.ts"
+    "test-db": "tsx --env-file=.env scripts/test-db.ts",
+    "test-api": "tsx --env-file=.env scripts/test-creator-api.ts"
   },
   "version": "0.1.0",
   "private": true,
