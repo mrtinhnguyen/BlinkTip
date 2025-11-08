@@ -10,6 +10,13 @@ const cdpClientKey = process.env.NEXT_PUBLIC_CDP_CLIENT_KEY as string
 const x402PaymentMiddleware = paymentMiddleware(
   address,
   {
+    '/api/x402/tip/*': {
+      price: '$0.01',
+      config: {
+        description: 'Tip creator for quality content',
+      },
+      network,
+    },
     '/content/cheap': {
       price: '$0.01',
       config: {
@@ -30,8 +37,8 @@ const x402PaymentMiddleware = paymentMiddleware(
   },
   {
     cdpClientKey,
-    appLogo: '/logos/x402-examples.png',
-    appName: 'x402 Demo',
+    appLogo: '/logo.png',
+    appName: 'BlinkTip',
     sessionTokenEndpoint: '/api/x402/session-token',
   },
 )
@@ -46,13 +53,7 @@ export const middleware = (req: NextRequest) => {
 // Configure which paths the middleware should run on
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (metadata files)
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-    '/', // Include the root path explicitly
+    '/api/x402/tip/:path*/pay',
+    '/content/:path*',
   ],
 }
