@@ -1,0 +1,146 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { supabase } from '@/lib/supabase'
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { slug, wallet_address, name, bio, avatar_url } = body
+
+    // Validate required fields
+    if (!slug || !wallet_address || !name) {
+      return NextResponse.json(
+        { error: 'Missing required fields: slug, wallet_address, name' },
+        { status: 400 }
+      )
+    }
+
+    // Validate slug format
+    if (!/^[a-z0-9_-]{3,50}$/.test(slug)) {
+      return NextResponse.json(
+        { error: 'Invalid slug format. Use 3-50 lowercase letters, numbers, hyphens, or underscores' },
+        { status: 400 }
+      )
+    }
+
+    // Check if slug or wallet already exists
+    const { data: existing } = await supabase
+      .from('creators')
+      .select('slug, wallet_address')
+      .or(`slug.eq.${slug},wallet_address.eq.${wallet_address}`)
+      .single()
+
+    if (existing) {
+      if (existing.slug === slug) {
+        return NextResponse.json(
+          { error: 'Slug already taken' },
+          { status: 409 }
+        )
+      }
+      if (existing.wallet_address === wallet_address) {
+        return NextResponse.json(
+          { error: 'Wallet address already registered' },
+          { status: 409 }
+        )
+      }
+    }
+
+    // Create creator
+    const { data: creator, error } = await supabase
+      .from('creators')
+      .insert({
+        slug,
+        wallet_address,
+        name,
+        bio: bio || null,
+        avatar_url: avatar_url || null,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Database error:', error)
+      return NextResponse.json(
+        { error: 'Failed to create creator' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      creator,
+      tip_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/tip/${slug}`,
+    }, { status: 201 })
+
+  } catch (error) {
+    console.error('Server error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const slug = searchParams.get('slug')
+    const wallet = searchParams.get('wallet')
+
+    if (slug) {
+      const { data: creator, error } = await supabase
+        .from('creators')
+        .select('*')
+        .eq('slug', slug)
+        .single()
+
+      if (error || !creator) {
+        return NextResponse.json(
+          { error: 'Creator not found' },
+          { status: 404 }
+        )
+      }
+
+      return NextResponse.json({ creator })
+    }
+
+    if (wallet) {
+      const { data: creator, error } = await supabase
+        .from('creators')
+        .select('*')
+        .eq('wallet_address', wallet)
+        .single()
+
+      if (error || !creator) {
+        return NextResponse.json(
+          { error: 'Creator not found' },
+          { status: 404 }
+        )
+      }
+
+      return NextResponse.json({ creator })
+    }
+
+    // List all creators
+    const { data: creators, error } = await supabase
+      .from('creators')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (error) {
+      return NextResponse.json(
+        { error: 'Failed to fetch creators' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ creators })
+
+  } catch (error) {
+    console.error('Server error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
