@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase'
 
 async function testDatabaseConnection() {
-  console.log('🔍 Testing Supabase connection...\n')
+  console.log('Testing Supabase connection...\n')
 
   try {
     const { data: creators, error: creatorsError } = await supabase
@@ -10,9 +10,9 @@ async function testDatabaseConnection() {
       .limit(10)
 
     if (creatorsError) {
-      console.error('❌ Error fetching creators:', creatorsError)
+      console.error('[ERROR] Error fetching creators:', creatorsError)
     } else {
-      console.log(`✅ Creators table: ${creators?.length || 0} rows`)
+      console.log(`[OK] Creators table: ${creators?.length || 0} rows`)
     }
 
     const { data: tips, error: tipsError } = await supabase
@@ -21,9 +21,9 @@ async function testDatabaseConnection() {
       .limit(10)
 
     if (tipsError) {
-      console.error('❌ Error fetching tips:', tipsError)
+      console.error('[ERROR] Error fetching tips:', tipsError)
     } else {
-      console.log(`✅ Tips table: ${tips?.length || 0} rows`)
+      console.log(`[OK] Tips table: ${tips?.length || 0} rows`)
     }
 
     const { data: actions, error: actionsError } = await supabase
@@ -32,9 +32,9 @@ async function testDatabaseConnection() {
       .limit(10)
 
     if (actionsError) {
-      console.error('❌ Error fetching agent actions:', actionsError)
+      console.error('[ERROR] Error fetching agent actions:', actionsError)
     } else {
-      console.log(`✅ Agent actions table: ${actions?.length || 0} rows`)
+      console.log(`[OK] Agent actions table: ${actions?.length || 0} rows`)
     }
 
     const { data: stats, error: statsError } = await supabase
@@ -43,14 +43,14 @@ async function testDatabaseConnection() {
       .limit(10)
 
     if (statsError) {
-      console.error('❌ Error fetching creator stats:', statsError)
+      console.error('[ERROR] Error fetching creator stats:', statsError)
     } else {
-      console.log(`✅ Creator stats view: ${stats?.length || 0} rows`)
+      console.log(`[OK] Creator stats view: ${stats?.length || 0} rows`)
     }
 
-    console.log('\n🎉 Database connection successful!')
+    console.log('\nDatabase connection successful!')
   } catch (error) {
-    console.error('❌ Unexpected error:', error)
+    console.error('[ERROR] Unexpected error:', error)
     process.exit(1)
   }
 }
