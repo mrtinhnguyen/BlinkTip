@@ -21,7 +21,7 @@ export async function GET(
       )
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
     return NextResponse.json({
       creator: {
@@ -32,8 +32,20 @@ export async function GET(
         wallet_address: creator.wallet_address,
       },
       payment: {
-        endpoint: `${baseUrl}/api/x402/tip/${slug}/pay`,
-        description: `Tip ${creator.name} for quality content`,
+        endpoints: {
+          base: {
+            url: `${baseUrl}/api/x402/tip/${slug}/pay`,
+            network: 'base-sepolia',
+            description: `Tip ${creator.name} via Base (USDC)`,
+            facilitator: 'https://x402.org/facilitator',
+          },
+          solana: {
+            url: `${baseUrl}/api/x402/tip/${slug}/pay-solana`,
+            network: 'solana-devnet',
+            description: `Tip ${creator.name} via Solana (USDC)`,
+            facilitator: 'https://facilitator.payai.network',
+          },
+        },
         default_amount: '$0.01',
         supported_networks: ['base-sepolia', 'solana-devnet'],
       },
