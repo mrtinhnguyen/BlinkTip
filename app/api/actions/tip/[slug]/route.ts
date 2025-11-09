@@ -47,18 +47,22 @@ export async function GET(
       links: {
         actions: [
           {
+            type: 'transaction',
             label: 'Tip 0.01 SOL',
             href: `/api/actions/tip/${slug}?amount=0.01`,
           },
           {
+            type: 'transaction',
             label: 'Tip 0.05 SOL',
             href: `/api/actions/tip/${slug}?amount=0.05`,
           },
           {
+            type: 'transaction',
             label: 'Tip 0.1 SOL',
             href: `/api/actions/tip/${slug}?amount=0.1`,
           },
           {
+            type: 'transaction',
             label: 'Tip Custom Amount',
             href: `/api/actions/tip/${slug}?amount={amount}`,
             parameters: [
@@ -164,6 +168,7 @@ export async function POST(
 
     const payload: ActionPostResponse = await createPostResponse({
       fields: {
+        type: 'transaction',
         transaction,
         message: `Tipping ${amount} SOL to ${creator.name}`,
       },
