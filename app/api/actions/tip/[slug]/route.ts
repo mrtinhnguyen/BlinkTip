@@ -180,6 +180,27 @@ export async function POST(
       },
     })
 
+    const { data: savedTip, error: dbError } = await supabase.from('tips').insert({
+      creator_id: creator.id,
+      from_address: accountPubkey.toBase58(),
+      amount,
+      token: 'SOL',
+      signature: 'pending',
+      source: 'human',
+      status: 'pending',
+      metadata: {
+        network: process.env.NEXT_PUBLIC_NETWORK === 'solana-mainnet-beta' ? 'mainnet-beta' : 'devnet',
+        lamports,
+      },
+    }).select()
+
+    if (dbError) {
+      console.error('[ERROR] Failed to record tip in database:', dbError)
+      console.error('[ERROR] Database error details:', JSON.stringify(dbError, null, 2))
+    } else {
+      console.log('[SUCCESS] Tip saved to database:', savedTip)
+    }
+
     return NextResponse.json(payload, {
       headers: {
         ...ACTIONS_CORS_HEADERS,
