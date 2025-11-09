@@ -91,6 +91,20 @@ export default function TipPage() {
       await connection.confirmTransaction(signature, 'confirmed')
 
       setTxSignature(signature)
+
+      try {
+        await fetch('/api/tips/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            signature,
+            from_address: publicKey.toBase58(),
+            creator_slug: slug,
+          }),
+        })
+      } catch (confirmError) {
+        console.error('Failed to confirm tip in database:', confirmError)
+      }
     } catch (err) {
       console.error('Tip error:', err)
       setError(err instanceof Error ? err.message : 'Failed to send tip')
