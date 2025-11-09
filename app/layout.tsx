@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Solana x402 Template',
-  description: 'This is a Next.js template with Solana payment integration using the x402 protocol.',
+  title: 'BlinkTip - Universal Micro-Tip Links',
+  description: 'Accept tips from humans via Solana Actions and AI agents via x402 protocol. Multi-chain support for Solana and Base.',
 }
 
 export default function RootLayout({
