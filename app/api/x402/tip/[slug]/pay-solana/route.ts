@@ -89,12 +89,17 @@ export async function GET(
       .from('tips')
       .insert({
         creator_id: creator.id,
+        from_address: agentId || 'unknown_agent',
         amount: parseFloat(amount),
-        currency: 'USDC',
-        network: 'solana-devnet',
-        tx_hash: settleResult.transaction || null,
-        tipper_address: agentId || 'unknown',
-        is_agent: true,
+        token: 'USDC',
+        signature: settleResult.transaction || `pending_${Date.now()}`,
+        source: 'agent',
+        status: settleResult.success ? 'confirmed' : 'pending',
+        metadata: {
+          network: 'solana-devnet',
+          facilitator: 'https://facilitator.payai.network',
+          agent_id: agentId,
+        },
       })
       .select()
       .single()
@@ -105,12 +110,16 @@ export async function GET(
 
     if (agentId && !tipError) {
       await supabase.from('agent_actions').insert({
-        agent_id: agentId,
-        action_type: 'tip',
-        target_creator_id: creator.id,
-        amount: parseFloat(amount),
-        network: 'solana-devnet',
-        success: true,
+        content_url: url.searchParams.get('content_url') || 'unknown',
+        content_title: url.searchParams.get('content_title') || null,
+        decision: 'tip',
+        tip_id: tip?.id,
+        reasoning: 'x402 payment completed via Solana',
+        metadata: {
+          agent_id: agentId,
+          network: 'solana-devnet',
+          amount: parseFloat(amount),
+        },
       })
     }
 
