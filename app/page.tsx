@@ -20,10 +20,16 @@ export default function Home() {
             </ul>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
+            <Link
+              href="/register"
+              className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+            >
+              Register as Creator
+            </Link>
             <Link
               href="/tip/alice"
-              className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              className="inline-block px-6 py-3 bg-gray-200 dark:bg-zinc-800 text-black dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-zinc-700 transition-colors"
             >
               Try Demo Tip
             </Link>
