@@ -36,17 +36,21 @@ export async function GET(
     const amount = url.searchParams.get('amount') || '0.01'
     const amountInMicroUsdc = Math.floor(parseFloat(amount) * 1_000_000).toString()
 
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const resourceUrl = `${baseUrl}/api/x402/tip/${slug}/pay-solana?amount=${amount}` as `${string}://${string}`
+
     const paymentRequirements = await x402Handler.createPaymentRequirements({
       price: {
         amount: amountInMicroUsdc,
         asset: {
           address: USDC_DEVNET_MINT,
+          decimals: 6,
         },
       },
       network: 'solana-devnet',
       config: {
         description: `Tip ${creator.name} for quality content`,
-        resource: `${process.env.NEXT_PUBLIC_BASE_URL}/api/x402/tip/${slug}/pay-solana?amount=${amount}`,
+        resource: resourceUrl,
       },
     })
 
