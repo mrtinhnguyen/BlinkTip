@@ -77,7 +77,13 @@ export async function GET(
       },
     }
 
-    return NextResponse.json(payload, { headers: ACTIONS_CORS_HEADERS })
+    return NextResponse.json(payload, {
+      headers: {
+        ...ACTIONS_CORS_HEADERS,
+        'X-Action-Version': '2.2.1',
+        'X-Blockchain-Ids': 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+      },
+    })
   } catch (error) {
     console.error('[ERROR] Actions GET:', error)
     return NextResponse.json(
@@ -174,7 +180,13 @@ export async function POST(
       },
     })
 
-    return NextResponse.json(payload, { headers: ACTIONS_CORS_HEADERS })
+    return NextResponse.json(payload, {
+      headers: {
+        ...ACTIONS_CORS_HEADERS,
+        'X-Action-Version': '2.2.1',
+        'X-Blockchain-Ids': 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+      },
+    })
   } catch (error) {
     console.error('[ERROR] Actions POST:', error)
     return NextResponse.json(
