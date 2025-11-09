@@ -82,12 +82,18 @@ export async function POST(
       .from('tips')
       .insert({
         creator_id: creator.id,
+        from_address: agentId || 'unknown_agent',
         amount: parseFloat(amount),
-        currency: 'USDC',
-        network: 'base-sepolia',
-        tx_hash: null,
-        tipper_address: agentId || 'unknown',
-        is_agent: true,
+        token: 'USDC',
+        signature: `base_pending_${Date.now()}`,
+        source: 'agent',
+        status: 'confirmed',
+        metadata: {
+          network: 'base-sepolia',
+          facilitator: 'https://x402.org/facilitator',
+          agent_id: agentId,
+          payment_headers: paymentHeaders || paymentResponse,
+        },
       })
       .select()
       .single()
@@ -102,12 +108,16 @@ export async function POST(
 
     if (agentId) {
       await supabase.from('agent_actions').insert({
-        agent_id: agentId,
-        action_type: 'tip',
-        target_creator_id: creator.id,
-        amount: parseFloat(amount),
-        network: 'base-sepolia',
-        success: true,
+        content_url: url.searchParams.get('content_url') || 'unknown',
+        content_title: url.searchParams.get('content_title') || null,
+        decision: 'tip',
+        tip_id: tip.id,
+        reasoning: 'x402 payment completed via Base',
+        metadata: {
+          agent_id: agentId,
+          network: 'base-sepolia',
+          amount: parseFloat(amount),
+        },
       })
     }
 
