@@ -2,13 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { X402PaymentHandler } from 'x402-solana/server'
 import { supabase } from '@/lib/supabase'
 
-const USDC_DEVNET_MINT = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'
-
-const x402Handler = new X402PaymentHandler({
-  network: 'solana-devnet',
-  treasuryAddress: process.env.TREASURY_WALLET_ADDRESS!,
-  facilitatorUrl: 'https://facilitator.payai.network',
-})
+// Using spl-token-faucet.com USDC Devnet mint (Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr)
+// This is the USDC-Dev token from the faucet that everyone can get easily
+const USDC_DEVNET_MINT = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr'
 
 export async function GET(
   request: NextRequest,
@@ -29,6 +25,13 @@ export async function GET(
         { status: 404 }
       )
     }
+
+    // Create x402 handler with THIS creator's wallet address
+    const x402Handler = new X402PaymentHandler({
+      network: 'solana-devnet',
+      treasuryAddress: creator.wallet_address, // ✅ Use creator's wallet, not treasury!
+      facilitatorUrl: 'https://facilitator.payai.network',
+    })
 
     const paymentHeader = x402Handler.extractPayment(request.headers)
 
