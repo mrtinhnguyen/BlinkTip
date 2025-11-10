@@ -154,66 +154,76 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900">
       <div className="max-w-2xl mx-auto p-6">
-        <div className="mb-6 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold">
+        <div className="mb-8 flex justify-between items-center">
+          <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
             BlinkTip
           </Link>
           <WalletMultiButton />
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-8">
-          <h1 className="text-3xl font-bold mb-2">Create Your Creator Profile</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Register to start receiving tips from humans and AI agents
-          </p>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-8 md:p-10 border border-gray-100 dark:border-zinc-800">
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-4">🎨</div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              Create Your Creator Profile
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-lg">
+              Start receiving tips from humans and AI agents worldwide
+            </p>
+          </div>
 
           {!publicKey ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Connect your Solana wallet to continue
-              </p>
-              <div className="flex justify-center">
-                <WalletMultiButton />
+            <div className="text-center py-16">
+              <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-8 mb-6">
+                <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">
+                  Connect your Solana wallet to get started
+                </p>
+                <div className="flex justify-center">
+                  <WalletMultiButton />
+                </div>
               </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Supports Phantom, Solflare, Coinbase Wallet, and more
+              </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold mb-2">
-                  Wallet Address
+              <div className="bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-gray-200 dark:border-zinc-700">
+                <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                  Connected Wallet
                 </label>
                 <input
                   type="text"
                   value={publicKey.toBase58()}
                   disabled
-                  className="w-full px-4 py-3 bg-gray-100 dark:bg-zinc-800 border dark:border-zinc-700 rounded-lg text-sm"
+                  className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded-lg text-sm font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">
+                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
                   Your Slug <span className="text-red-500">*</span>
                 </label>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-500">blink-tip.vercel.app/tip/</span>
+                <div className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-2 border-2 border-purple-200 dark:border-purple-800">
+                  <span className="text-gray-500 dark:text-gray-400 text-sm px-2">blink-tip.vercel.app/tip/</span>
                   <input
                     type="text"
                     value={slug}
                     onChange={handleSlugChange}
                     placeholder="your-slug"
                     required
-                    className="flex-1 px-4 py-3 border dark:border-zinc-700 dark:bg-zinc-800 rounded-lg focus:ring-2 focus:ring-purple-600 outline-none"
+                    className="flex-1 px-4 py-3 bg-white dark:bg-zinc-900 border-none rounded-lg focus:ring-2 focus:ring-purple-600 outline-none font-semibold"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-1">
                   3-50 characters: lowercase letters, numbers, hyphens, underscores
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">
+                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
                   Display Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -222,25 +232,25 @@ export default function RegisterPage() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your Name"
                   required
-                  className="w-full px-4 py-3 border dark:border-zinc-700 dark:bg-zinc-800 rounded-lg focus:ring-2 focus:ring-purple-600 outline-none"
+                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">
+                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
                   Bio
                 </label>
                 <textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder="Tell people about yourself..."
-                  rows={3}
-                  className="w-full px-4 py-3 border dark:border-zinc-700 dark:bg-zinc-800 rounded-lg focus:ring-2 focus:ring-purple-600 outline-none resize-none"
+                  rows={4}
+                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none resize-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">
+                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
                   Avatar URL
                 </label>
                 <input
@@ -248,22 +258,22 @@ export default function RegisterPage() {
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
                   placeholder="https://example.com/avatar.jpg"
-                  className="w-full px-4 py-3 border dark:border-zinc-700 dark:bg-zinc-800 rounded-lg focus:ring-2 focus:ring-purple-600 outline-none"
+                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition-all"
                 />
               </div>
 
               {error && (
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <p className="text-red-600 dark:text-red-400">{error}</p>
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-xl">
+                  <p className="text-red-700 dark:text-red-300 font-semibold">{error}</p>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-bold py-4 px-6 rounded-lg transition-colors"
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
               >
-                {loading ? 'Creating Profile...' : 'Create Profile'}
+                {loading ? 'Creating Profile...' : 'Create Your Tip Page'}
               </button>
             </form>
           )}
