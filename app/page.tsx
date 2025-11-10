@@ -2,46 +2,119 @@ import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <div className="w-full">
-          <h1 className="text-4xl font-bold mb-4">BlinkTip</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Universal micro-tip links for creators. Accept tips from humans via Solana Actions and AI agents via x402 protocol.
+    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+      <div className="max-w-6xl mx-auto px-6 py-16">
+        <header className="text-center mb-20">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            BlinkTip
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            One universal link. Tips from humans AND AI agents. Everywhere.
           </p>
+        </header>
 
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold mb-3">Features</h2>
-            <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-              <li>• Human tipping via Solana Actions/Blinks</li>
-              <li>• AI agent tipping via x402 protocol</li>
-              <li>• Multi-chain support (Solana + Base)</li>
-              <li>• Shareable tip links</li>
-            </ul>
+        <section className="mb-20">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-8 md:p-12">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold mb-4 text-red-600 dark:text-red-400">The Problem</h2>
+              <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                Creators juggle fragmented tipping across platforms. PayPal here, Venmo there, Cash App somewhere else.
+                Audiences need to hunt through link-in-bio pages just to send support. Meanwhile, AI agents can't tip at all.
+              </p>
+            </div>
+
+            <div className="border-t dark:border-zinc-700 pt-8">
+              <h2 className="text-3xl font-bold mb-4 text-green-600 dark:text-green-400">The Solution</h2>
+              <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
+                BlinkTip gives you ONE link that works everywhere. Share it on Twitter, Instagram, TikTok, or anywhere else.
+                Humans tip via Solana Blinks. AI agents tip via x402 protocol. No more juggling payment platforms.
+              </p>
+              <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-6">
+                <p className="font-mono text-sm md:text-base text-purple-900 dark:text-purple-200">
+                  blinktip.com/tip/your-name
+                </p>
+              </div>
+            </div>
           </div>
+        </section>
 
-          <div className="flex gap-4 flex-wrap">
+        <section className="mb-20">
+          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-8 text-center">
+              <div className="text-4xl mb-4">🔗</div>
+              <h3 className="text-xl font-bold mb-3">1. Create Your Link</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Register with your Solana wallet and choose your custom slug
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-8 text-center">
+              <div className="text-4xl mb-4">📤</div>
+              <h3 className="text-xl font-bold mb-3">2. Share Everywhere</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Post on Twitter, Instagram, TikTok, or anywhere your audience is
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-8 text-center">
+              <div className="text-4xl mb-4">💰</div>
+              <h3 className="text-xl font-bold mb-3">3. Receive Tips</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Get USDC tips from humans and autonomous AI agents instantly
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-20">
+          <h2 className="text-3xl font-bold text-center mb-12">Features</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+              <h3 className="text-xl font-bold mb-2 text-blue-900 dark:text-blue-200">Twitter/X Blinks</h3>
+              <p className="text-gray-700 dark:text-gray-300">
+                Your link unfurls as an interactive Solana Blink on Twitter, letting followers tip instantly without leaving the app
+              </p>
+            </div>
+
+            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-6">
+              <h3 className="text-xl font-bold mb-2 text-purple-900 dark:text-purple-200">x402 Protocol</h3>
+              <p className="text-gray-700 dark:text-gray-300">
+                AI agents can autonomously discover and tip you using the x402 web payment standard
+              </p>
+            </div>
+
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6">
+              <h3 className="text-xl font-bold mb-2 text-green-900 dark:text-green-200">Universal Compatibility</h3>
+              <p className="text-gray-700 dark:text-gray-300">
+                One link works on ALL platforms - Instagram, TikTok, YouTube, email, anywhere you can share a URL
+              </p>
+            </div>
+
+            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-6">
+              <h3 className="text-xl font-bold mb-2 text-orange-900 dark:text-orange-200">Instant Settlement</h3>
+              <p className="text-gray-700 dark:text-gray-300">
+                Tips arrive directly in your wallet instantly via Solana blockchain
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="text-center">
+          <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl shadow-2xl p-12 text-white">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
+            <p className="text-lg mb-8 opacity-90">
+              Create your universal tip link in less than 60 seconds
+            </p>
             <Link
               href="/register"
-              className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              className="inline-block px-8 py-4 bg-white text-purple-600 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg"
             >
-              Register as Creator
-            </Link>
-            <Link
-              href="/tip/alice"
-              className="inline-block px-6 py-3 bg-gray-200 dark:bg-zinc-800 text-black dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-zinc-700 transition-colors"
-            >
-              Try Demo Tip
-            </Link>
-            <Link
-              href="/content/cheap"
-              className="inline-block px-6 py-3 bg-neutral-800 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity"
-            >
-              x402 Demo
+              Create Your Tip Page
             </Link>
           </div>
-        </div>
-      </main>
+        </section>
+      </div>
     </div>
   )
 }
