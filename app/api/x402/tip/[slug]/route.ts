@@ -32,22 +32,13 @@ export async function GET(
         wallet_address: creator.wallet_address,
       },
       payment: {
-        endpoints: {
-          base: {
-            url: `${baseUrl}/api/x402/tip/${slug}/pay`,
-            network: 'base-sepolia',
-            description: `Tip ${creator.name} via Base (USDC)`,
-            facilitator: 'https://x402.org/facilitator',
-          },
-          solana: {
-            url: `${baseUrl}/api/x402/tip/${slug}/pay-solana`,
-            network: 'solana-devnet',
-            description: `Tip ${creator.name} via Solana (USDC)`,
-            facilitator: 'https://facilitator.payai.network',
-          },
-        },
+        endpoint: `${baseUrl}/api/x402/tip/${slug}/pay-solana`,
+        network: 'solana-devnet',
+        description: `Tip ${creator.name} via Solana (USDC)`,
+        facilitator: 'https://facilitator.payai.network',
         default_amount: '$0.01',
-        supported_networks: ['base-sepolia', 'solana-devnet'],
+        token: 'USDC-Dev',
+        token_mint: 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr',
       },
     })
   } catch (error) {
