@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [tipLink, setTipLink] = useState('')
+  const [blinkUrl, setBlinkUrl] = useState('')
 
   const validateSlug = (value: string) => {
     const slugRegex = /^[a-z0-9_-]{3,50}$/
@@ -69,6 +70,7 @@ export default function RegisterPage() {
 
       setSuccess(true)
       setTipLink(data.tip_link)
+      setBlinkUrl(data.blink_url)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed')
     } finally {
@@ -87,21 +89,47 @@ export default function RegisterPage() {
               Your BlinkTip creator profile has been created
             </p>
 
-            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-6 mb-6">
-              <h2 className="font-semibold mb-2">Your Tip Link:</h2>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={tipLink}
-                  readOnly
-                  className="flex-1 px-4 py-2 bg-white dark:bg-zinc-800 border dark:border-zinc-700 rounded"
-                />
-                <button
-                  onClick={() => navigator.clipboard.writeText(tipLink)}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-semibold"
-                >
-                  Copy
-                </button>
+            <div className="space-y-4 mb-6">
+              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-6">
+                <h2 className="font-semibold mb-1">Your Universal Tip Page</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  Share this link anywhere - Instagram, TikTok, email, etc. Works with x402 protocol.
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={tipLink}
+                    readOnly
+                    className="flex-1 px-4 py-2 bg-white dark:bg-zinc-800 border dark:border-zinc-700 rounded text-sm"
+                  />
+                  <button
+                    onClick={() => navigator.clipboard.writeText(tipLink)}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-semibold"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                <h2 className="font-semibold mb-1">Your Blink URL (Twitter/X)</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  Share this on Twitter/X - it will unfurl as an interactive Blink once domain is registered.
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={blinkUrl}
+                    readOnly
+                    className="flex-1 px-4 py-2 bg-white dark:bg-zinc-800 border dark:border-zinc-700 rounded text-sm"
+                  />
+                  <button
+                    onClick={() => navigator.clipboard.writeText(blinkUrl)}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold"
+                  >
+                    Copy
+                  </button>
+                </div>
               </div>
             </div>
 
