@@ -65,10 +65,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
     return NextResponse.json({
       success: true,
       creator,
-      tip_link: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/tip/${slug}`,
+      tip_link: `${baseUrl}/tip/${slug}`,
+      blink_url: `${baseUrl}/tip/${slug}`,
+      x402_endpoint: `${baseUrl}/api/x402/tip/${slug}/pay-solana`,
     }, { status: 201 })
 
   } catch (error) {
