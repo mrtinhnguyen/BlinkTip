@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       success: true,
       creator,
       tip_link: `${baseUrl}/tip/${slug}`,
-      blink_url: `${baseUrl}/tip/${slug}`,
+      blink_url: `https://dial.to/?action=solana-action:${baseUrl}/api/actions/tip/${slug}`,
       x402_endpoint: `${baseUrl}/api/x402/tip/${slug}/pay-solana`,
     }, { status: 201 })
 
