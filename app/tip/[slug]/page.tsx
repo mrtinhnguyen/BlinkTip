@@ -112,9 +112,10 @@ export default function TipPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900">
         <div className="text-center">
-          <div className="text-lg">Loading...</div>
+          <div className="text-4xl mb-4 animate-pulse">💰</div>
+          <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">Loading creator...</div>
         </div>
       </div>
     )
@@ -122,9 +123,11 @@ export default function TipPage() {
 
   if (error && !creator) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black">
-        <div className="text-center">
-          <div className="text-red-600 dark:text-red-400 text-lg">{error}</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-5xl mb-4">😕</div>
+          <div className="text-red-600 dark:text-red-400 text-xl font-bold mb-2">Creator Not Found</div>
+          <p className="text-gray-600 dark:text-gray-400">{error}</p>
         </div>
       </div>
     )
@@ -139,39 +142,40 @@ export default function TipPage() {
     : null
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900">
       <div className="max-w-2xl mx-auto p-6">
-        <div className="mb-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold">BlinkTip</h1>
+        <div className="mb-8 flex justify-between items-center">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">BlinkTip</h1>
           <WalletMultiButton />
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-8">
-          <div className="flex items-center gap-4 mb-6">
-            {creator.avatar_url && (
-              <img
-                src={creator.avatar_url}
-                alt={creator.name}
-                className="w-20 h-20 rounded-full"
-              />
-            )}
-            <div>
-              <h2 className="text-2xl font-bold">{creator.name}</h2>
-              <p className="text-gray-600 dark:text-gray-400">{creator.bio}</p>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-100 dark:border-zinc-800">
+          <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-8 text-white">
+            <div className="flex items-center gap-6">
+              {creator.avatar_url && (
+                <img
+                  src={creator.avatar_url}
+                  alt={creator.name}
+                  className="w-24 h-24 rounded-full border-4 border-white shadow-xl"
+                />
+              )}
+              <div>
+                <h2 className="text-3xl font-bold mb-2">{creator.name}</h2>
+                <p className="text-purple-100 text-lg">{creator.bio}</p>
+              </div>
             </div>
           </div>
 
-          <div className="border-t dark:border-zinc-800 pt-6">
-            <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm text-blue-800 dark:text-blue-400">
-                <strong>💡 x402 Payment:</strong> This uses the x402 protocol on Solana.
-                When you click "Tip", your wallet will sign a USDC payment transaction that's verified on-chain.
+          <div className="p-8">
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl">
+              <p className="text-sm text-blue-900 dark:text-blue-200">
+                <strong>💡 Powered by x402:</strong> Instant USDC tips via Solana. Your wallet signs the transaction, and it's verified on-chain.
               </p>
             </div>
 
-            <h3 className="text-lg font-semibold mb-4">Select Tip Amount (USDC)</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Select Tip Amount</h3>
 
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-3 gap-3 mb-6">
               {TIP_AMOUNTS.map((amount) => (
                 <button
                   key={amount}
@@ -179,20 +183,20 @@ export default function TipPage() {
                     setSelectedAmount(amount)
                     setCustomAmount('')
                   }}
-                  className={`py-3 px-4 rounded-lg font-semibold transition-colors ${
+                  className={`py-4 px-4 rounded-xl font-bold transition-all transform hover:scale-105 ${
                     selectedAmount === amount && !customAmount
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700'
+                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                      : 'bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-gray-200'
                   }`}
                 >
-                  ${amount} USDC
+                  ${amount}
                 </button>
               ))}
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">
-                Custom Amount (USD)
+              <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">
+                Or Enter Custom Amount (USDC)
               </label>
               <input
                 type="number"
@@ -200,50 +204,55 @@ export default function TipPage() {
                 min="0"
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
-                placeholder="Enter custom amount"
-                className="w-full px-4 py-3 rounded-lg border dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-purple-600 outline-none"
+                placeholder="0.00"
+                className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none text-lg font-semibold transition-all"
               />
             </div>
 
             {!publicKey ? (
-              <div className="text-center py-4 text-gray-600 dark:text-gray-400">
-                Connect your wallet to send a tip
+              <div className="text-center py-8 bg-purple-50 dark:bg-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-800">
+                <p className="text-gray-700 dark:text-gray-300 font-semibold mb-4">
+                  Connect your wallet to send a tip
+                </p>
+                <div className="flex justify-center">
+                  <WalletMultiButton />
+                </div>
               </div>
             ) : (
               <button
                 onClick={handleTip}
                 disabled={tipping}
-                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-bold py-4 px-6 rounded-lg transition-colors"
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold py-5 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] text-lg"
               >
                 {tipping
-                  ? 'Processing x402 Payment...'
-                  : `Tip $${customAmount || selectedAmount} USDC`}
+                  ? 'Processing Payment...'
+                  : `Send $${customAmount || selectedAmount} USDC Tip`}
               </button>
             )}
 
             {error && (
-              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-red-600 dark:text-red-400 font-semibold mb-1">Payment Failed</p>
-                <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+              <div className="mt-6 p-6 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-xl">
+                <p className="text-red-700 dark:text-red-300 font-bold text-lg mb-2">❌ Payment Failed</p>
+                <p className="text-red-600 dark:text-red-400">{error}</p>
               </div>
             )}
 
             {txSignature && (
-              <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <p className="text-green-800 dark:text-green-400 font-semibold mb-2">
-                  ✅ Tip sent successfully via x402!
+              <div className="mt-6 p-6 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-xl">
+                <p className="text-green-800 dark:text-green-300 font-bold text-lg mb-3">
+                  ✅ Tip Sent Successfully!
                 </p>
-                <p className="text-sm text-green-700 dark:text-green-500 mb-2">
-                  Your tip was verified and settled on Solana using the x402 protocol.
+                <p className="text-green-700 dark:text-green-400 mb-4">
+                  Your tip was verified and settled on Solana via the x402 protocol. Thank you for supporting this creator!
                 </p>
                 {explorerUrl && (
                   <a
                     href={explorerUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-purple-600 dark:text-purple-400 hover:underline text-sm break-all"
+                    className="inline-block px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors"
                   >
-                    View transaction on Solana Explorer →
+                    View on Solana Explorer →
                   </a>
                 )}
               </div>
