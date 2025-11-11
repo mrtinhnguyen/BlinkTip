@@ -29,7 +29,7 @@ const cdp = new CdpClient();
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
 const connection = new Connection(SOLANA_RPC_URL, "confirmed");
 
-// USDC Mint on Solana Devnet (from spl-token-faucet.com)
+// USDC Mint on Solana Devnet 
 const USDC_MINT = new PublicKey(
   "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr" // USDC-Dev from spl-token-faucet.com
 );
@@ -49,13 +49,9 @@ export interface TipResult {
   recipient?: string;
 }
 
-/**
- * Get or create the agent's Solana account
- * Uses a named account so it persists across runs
- */
 export async function getOrCreateAgentWallet() {
   try {
-    // Use a consistent name so we always get the same wallet
+    /
     const account = await cdp.solana.getOrCreateAccount({ name: "blinktip-agent" });
     console.log(`[CDP Wallet] Agent wallet: ${account.address}`);
     return account;
