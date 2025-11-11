@@ -3,10 +3,6 @@
  *
  * This service handles direct USDC transfers from the agent's CDP wallet to creators.
  * This is the working, production-ready tipping method for the autonomous agent.
- *
- * NOTE: We attempted to use x402 protocol for tipping (see x402-tipper.ts), but
- * encountered a Solana-specific validation error. This direct CDP approach works
- * reliably while we wait for x402 Solana transaction format clarification.
  */
 
 import { getOrCreateAgentWallet, sendUSDCTip } from "./cdp-wallet";
