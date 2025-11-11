@@ -288,11 +288,11 @@ export async function tipCreatorViaX402(
       success: false,
       error: result.error || "Unknown error",
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[x402 Tipper] Error:", error);
     return {
       success: false,
-      error: error.message || "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }

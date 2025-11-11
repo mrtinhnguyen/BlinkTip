@@ -331,8 +331,8 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
           console.log(` ${error}`);
           result.errors.push(error);
         }
-      } catch (error: any) {
-        const errorMsg = `Error analyzing @${creator.twitterHandle}: ${error.message}`;
+      } catch (error: unknown) {
+        const errorMsg = `Error analyzing @${creator.twitterHandle}: ${error instanceof Error ? error.message : String(error)}`;
         console.error(` ${errorMsg}`);
         result.errors.push(errorMsg);
       }
@@ -359,9 +359,9 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
     console.log(`- Total Tipped: $${result.stats.totalTippedUSDC.toFixed(2)} USDC\n`);
 
     return result;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("\n Agent run failed:", error);
-    result.errors.push(error.message);
+    result.errors.push(error instanceof Error ? error.message : String(error));
     return result;
   }
 }

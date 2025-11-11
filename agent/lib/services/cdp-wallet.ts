@@ -51,7 +51,6 @@ export interface TipResult {
 
 export async function getOrCreateAgentWallet() {
   try {
-    /
     const account = await cdp.solana.getOrCreateAccount({ name: "blinktip-agent" });
     console.log(`[CDP Wallet] Agent wallet: ${account.address}`);
     return account;
