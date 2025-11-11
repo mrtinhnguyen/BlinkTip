@@ -10,7 +10,7 @@
 import { getYapsScore, analyzeYapsScore, meetsYapsThreshold } from "../agent/lib/services/kaito";
 
 async function main() {
-  console.log("\n🧪 Testing Kaito Yaps API...\n");
+  console.log("\n Testing Kaito Yaps API...\n");
 
   // Test usernames (crypto influencers)
   const testUsers = ["vitalikbuterin", "SBF_FTX", "CZ_Binance"];
@@ -23,7 +23,7 @@ async function main() {
       const score = await getYapsScore(username);
 
       if (!score) {
-        console.log(`❌ Failed to fetch Yaps score for @${username}`);
+        console.log(`Failed to fetch Yaps score for @${username}`);
         continue;
       }
 
@@ -56,7 +56,7 @@ async function main() {
 
     console.log("\n✅ All tests passed!\n");
   } catch (error) {
-    console.error("\n❌ Test failed:", error);
+    console.error("\n Test failed:", error);
     process.exit(1);
   }
 }
