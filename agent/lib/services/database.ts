@@ -177,7 +177,7 @@ export async function checkRecentAgentTip(
       wasTippedRecently: true,
       lastTipDate: lastTip.created_at,
       daysSinceLastTip: daysSince,
-      recommendation: `❌ SKIP - Already tipped $${lastTip.amount} USDC ${daysSince} day(s) ago`,
+      recommendation: ` SKIP - Already tipped $${lastTip.amount} USDC ${daysSince} day(s) ago`,
     };
   } catch (error) {
     console.error("[Database] Error checking recent tips:", error);
