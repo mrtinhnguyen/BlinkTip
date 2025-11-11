@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { X402PaymentHandler } from 'x402-solana/server'
 import { supabase } from '@/lib/supabase'
 
-// Using spl-token-faucet.com USDC Devnet mint (Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr)
-// This is the USDC-Dev token from the faucet that everyone can get easily
+//  spl-token-faucet.com USDC Devnet mint (Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr)
+
 const USDC_DEVNET_MINT = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr'
 
 export async function GET(
