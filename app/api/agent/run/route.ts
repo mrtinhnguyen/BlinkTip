@@ -2,11 +2,6 @@
  * API Endpoint: POST /api/agent/run
  *
  * Triggers the autonomous tipping agent
- *
- * This endpoint can be called:
- * - Manually for testing/demos
- * - By Vercel Cron for autonomous operation
- * - By external services via webhook
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -16,14 +11,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300; // 5 minutes max execution time
 
 export async function POST(request: NextRequest) {
-  console.log("\n🚀 Agent run triggered via API\n");
+  console.log("\n  Agent run triggered via API\n");
 
   try {
-    // Optional: Add authentication for production
-    // const authHeader = request.headers.get("authorization");
-    // if (authHeader !== `Bearer ${process.env.AGENT_API_SECRET}`) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    // Add authentication
+    
 
     // Run the agent
     const result = await runTippingAgent();
@@ -60,7 +52,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Also support GET for easy browser testing
+// GET for easy browser testing
 export async function GET(request: NextRequest) {
   return NextResponse.json({
     message: "BlinkTip Autonomous Agent",
