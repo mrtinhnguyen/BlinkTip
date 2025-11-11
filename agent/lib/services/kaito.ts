@@ -1,11 +1,5 @@
 /**
  * Kaito Yaps API Service
- *
- * Kaito Yaps score measures creator influence and engagement on Twitter/X
- * Higher scores = more influential creators worth tipping
- *
- * API: https://api.kaito.ai/api/v1/yaps
- * Rate limit: 100 calls per 5 minutes (free tier)
  */
 
 export interface KaitoYapsScore {
