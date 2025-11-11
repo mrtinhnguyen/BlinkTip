@@ -10,7 +10,7 @@
 import { getOrCreateAgentWallet, getAgentBalance, requestDevnetSOL } from "../agent/lib/services/cdp-wallet";
 
 async function main() {
-  console.log("\n🧪 Testing CDP Agent Wallet...\n");
+  console.log("\n Testing CDP Agent Wallet...\n");
 
   try {
     // Test 1: Create/Get Wallet
@@ -30,7 +30,7 @@ async function main() {
       const potentialTips = Math.floor(balance.balanceUSDC / 0.1);
       console.log(`✓ Potential Tips: ${potentialTips} (at $0.10 each)\n`);
     } else {
-      console.log(`⚠️  No USDC balance. Fund the wallet to enable tipping.\n`);
+      console.log(`  No USDC balance. Fund the wallet to enable tipping.\n`);
     }
 
     // Test 3: Request SOL (for gas fees)
@@ -40,14 +40,14 @@ async function main() {
       if (faucetSuccess) {
         console.log("✓ SOL faucet request sent\n");
       } else {
-        console.log("❌ Faucet request failed\n");
+        console.log(" Faucet request failed\n");
       }
     } else {
       console.log("Test 3: Skipping faucet (sufficient SOL balance)\n");
     }
 
     // Summary
-    console.log("📊 Summary");
+    console.log(" Summary");
     console.log("─────────────────────────────");
     console.log(`Wallet: ${wallet.address}`);
     console.log(`SOL: ${balance.balanceSOL.toFixed(4)}`);
@@ -63,7 +63,7 @@ async function main() {
     }
 
   } catch (error) {
-    console.error("\n❌ Test failed:", error);
+    console.error("\n Test failed:", error);
     process.exit(1);
   }
 }
