@@ -1,6 +1,5 @@
 -- Add Twitter verification columns to creators table
 -- Migration: add_twitter_verification
--- Created: 2025-01-11
 
 -- Add Twitter OAuth columns
 ALTER TABLE creators

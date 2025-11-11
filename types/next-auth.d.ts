@@ -10,6 +10,9 @@ declare module 'next-auth' {
       twitterHandle: string
       twitterName: string
       twitterAvatarUrl: string
+      twitterFollowerCount: number
+      twitterCreatedAt: string
+      twitterVerified: boolean
     }
   }
 }
@@ -20,5 +23,8 @@ declare module 'next-auth/jwt' {
     twitterHandle?: string
     twitterName?: string
     twitterAvatarUrl?: string
+    twitterFollowerCount?: number
+    twitterCreatedAt?: string
+    twitterVerified?: boolean
   }
 }
