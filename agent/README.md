@@ -228,8 +228,6 @@ CDP_API_KEY_PRIVATE_KEY=your-private-key
 # AI Model (OpenRouter)
 OPENROUTER_API_KEY=your-openrouter-key
 
-# Kaito Yaps (Influence API)
-KAITO_API_KEY=your-kaito-key
 
 # Platform
 NEXT_PUBLIC_BASE_URL=https://your-domain.com

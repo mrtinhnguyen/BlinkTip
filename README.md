@@ -26,72 +26,125 @@ BlinkTip makes it easy for crypto creators on Twitter to receive USDC tips via S
 
 ## The Problem
 
-**Content creators in crypto face three major challenges:**
+**There's no universal, easy way to tip creators on the internet.**
 
-1. **Discoverability**: Great creators get lost in the noise of crypto Twitter
-2. **Monetization**: Building an audience doesn't always translate to income
-3. **Recognition**: Real influence and expertise go unrewarded while engagement farmers thrive
+Imagine you're a content creator with Instagram, TikTok, Twitter/X, Farcaster, Medium, and more. Your audience is scattered across all these platforms:
 
-Traditional tipping is manual, requires finding wallet addresses, and offers no way to systematically reward quality creators.
+- **On Instagram/TikTok**: Most followers don't know crypto. You use "link in bio" for PayPal, Venmo, or CashApp
+- **On Twitter/X**: Maybe you drop your ENS or Solana address for on-chain tips, but only crypto natives understand that
+- **On other platforms**: Same fragmented mess - different payment methods everywhere
+- **For AI agents**: No way for autonomous agents to discover and tip you for your content
+
+**The result?** You need multiple payment links, multiple bios, and you're invisible to the emerging world of autonomous AI agents that could reward quality content.
+
+There's no single, universal tip link that works EVERYWHERE and accepts payments from ANYONE - humans AND AI agents.
 
 ## The Solution
 
-**BlinkTip combines three powerful technologies to solve this:**
+**BlinkTip gives creators ONE universal tip link that works everywhere.**
 
-### 1. Solana Blinks (Twitter Integration)
-Creators register once and get a personalized tipping link that unfurls beautifully on Twitter:
+### One Link, Everywhere
 
+1. **Creator signs up** with their Solana wallet
+2. **Gets ONE universal tip link**: `blink-tip.vercel.app/tip/yagamilighto`
+3. **Shares it EVERYWHERE**: Instagram bio, TikTok bio, Twitter profile, Farcaster, Medium articles, email signature, anywhere
+4. **Anyone can tip** - humans and AI agents alike
+
+### How It Works on Different Platforms
+
+**On Twitter/X (Solana Blinks)**
 ```
-https://blinktip.xyz/tip/nellycyberpro
-→ Unfurls into interactive tipping card on Twitter
-→ Supporters tip directly from their timeline
-→ Powered by x402 protocol for instant USDC payments
+https://blink-tip.vercel.app/tip/ujooba
+→ Unfurls as an interactive Solana Blink
+→ Followers click and tip instantly without leaving Twitter
+→ Powered by Solana Actions
 ```
+[See it live](https://dial.to/?action=solana-action:https://blink-tip.vercel.app/api/actions/tip/ujooba)
 
-### 2. x402 Payment Protocol
-The HTTP-native payment protocol that makes crypto tipping as easy as clicking a button:
+**Everywhere Else (x402 Protocol)**
 
-- **No wallet copying**: Tips happen directly in the browser
-- **Instant verification**: Payments verified on Solana blockchain
-- **Secure**: Protocol-level payment guarantees via facilitator
-- **Standards-based**: Uses HTTP 402 status code (Payment Required)
+When someone clicks your tip link from Instagram, TikTok, Medium, or anywhere else:
 
-### 3. Autonomous AI Agent
-A Claude Sonnet 4-powered agent that discovers and rewards creators automatically:
+1. Click tip link → Browser sends GET request
+2. Server returns `402 Payment Required` with payment instructions
+3. User creates Solana transaction via x402 client
+4. Transaction signed → Submitted with `X-PAYMENT` header
+5. Payment verified on-chain → Tip complete
 
-- **Discovers** creators via Kaito Yaps (crypto influence API)
-- **Evaluates** authenticity (Twitter verification, account age, profile quality)
-- **Decides** who to tip using AI reasoning
-- **Tips** directly from its own CDP wallet
+**The game-changer:** AI agents can autonomously use the same x402 flow. An AI agent crawling the web can find your helpful Medium article, see your tip link, and autonomously send a tip via x402 without ANY human intervention.
+
+### Autonomous AI Agent
+
+BlinkTip includes a Claude Sonnet 4-powered autonomous agent that:
+
+- **Discovers** registered creators from the platform
+- **Analyzes** their crypto influence (Kaito Yaps API) and social metrics
+- **Decides** who to tip using AI reasoning (authenticity, engagement, influence)
+- **Tips** directly from its own CDP wallet using the same x402 infrastructure
 - **Records** all decisions transparently
+
+This demonstrates how ANY autonomous agent can discover and reward creators using x402 - whether they're on Twitter, Medium, personal blogs, or anywhere else on the internet.
 
 ---
 
 ## How It Works
 
-### For Creators (Human Tips)
+### For Creators
 
-1. **Register**: Connect Twitter + Solana wallet
-2. **Get Blink**: Receive personalized tip link
-3. **Share**: Post on Twitter, link unfurls into tipping card
-4. **Receive Tips**: USDC arrives directly in wallet
+1. **Sign up** at `blink-tip.vercel.app/register`
+   - Connect Twitter via OAuth 2.0
+   - Connect your Solana wallet
 
-### For Supporters (Human Tips)
+2. **Get your universal tip link**: `blink-tip.vercel.app/tip/yourhandle`
 
-1. **Find Creator**: Discover via Twitter or search platform
-2. **Click Tip**: Solana Blink unfurls on Twitter
-3. **Choose Amount**: Select preset or custom USDC amount
-4. **Pay via x402**: Wallet signs transaction, verified on-chain
-5. **Done**: Creator receives tip instantly
+3. **Share it EVERYWHERE**:
+   - Instagram bio: "Tip me: blink-tip.vercel.app/tip/yourhandle"
+   - TikTok bio: Same link
+   - Twitter bio: Link unfurls as interactive Blink
+   - Medium articles: Add at the end of posts
+   - Email signature: Include your tip link
+   - Personal website: Link from any page
 
-### For the AI Agent (Autonomous Tips)
+4. **Receive tips** in USDC directly to your Solana wallet from:
+   - Humans on any platform
+   - Autonomous AI agents discovering your content
 
-1. **Scan**: Agent fetches all registered creators
-2. **Analyze**: Queries Kaito Yaps API for crypto influence scores
-3. **Evaluate**: AI analyzes profile completeness, account age, follower count
-4. **Decide**: Claude Sonnet 4 makes TIP/SKIP decision with reasoning
-5. **Execute**: Agent's CDP wallet sends USDC tip directly
-6. **Record**: Decision and transaction logged to database
+### For Human Supporters
+
+**On Twitter/X:**
+- See creator's Blink unfurl in timeline
+- Click to tip (no leaving Twitter)
+- Sign transaction with your Solana wallet
+- Done
+
+**On Any Other Platform:**
+- Click creator's tip link from Instagram, TikTok, etc.
+- Choose tip amount
+- Browser creates x402 payment transaction
+- Sign with your wallet
+- Payment verified on-chain
+- Creator receives tip
+
+### For AI Agents (Autonomous Tipping)
+
+**How ANY AI Agent Can Tip:**
+
+1. Agent discovers creator's tip link (on Medium, personal blog, anywhere)
+2. Agent sends GET request → receives `402 Payment Required` + payment details
+3. Agent builds Solana transaction from payment requirements
+4. Agent signs transaction with its own wallet
+5. Agent submits with `X-PAYMENT` header → verified on-chain
+6. Creator receives tip
+
+**BlinkTip's Built-in Agent:**
+
+Our platform demonstrates this with a Claude Sonnet 4-powered agent:
+
+1. Fetches all registered creators from platform
+2. Analyzes crypto influence (Kaito Yaps) + Twitter metrics
+3. AI decides who to tip based on authenticity and engagement
+4. Tips via x402 using its CDP wallet
+5. Logs all decisions transparently
 
 ---
 
@@ -146,7 +199,6 @@ A Claude Sonnet 4-powered agent that discovers and rewards creators automaticall
 - **Model**: Claude Sonnet 4 (via OpenRouter)
 - **Influence API**: Kaito Yaps
 - **Wallet**: CDP server-side wallet
-- **Decision Window**: 24-hour cooldown per creator
 
 ---
 
@@ -165,7 +217,7 @@ A Claude Sonnet 4-powered agent that discovers and rewards creators automaticall
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/BlinkTip.git
+git clone https://github.com/wamimi/BlinkTip.git
 cd BlinkTip
 
 # Install dependencies
@@ -211,7 +263,6 @@ CDP_API_KEY_PRIVATE_KEY=your-cdp-private-key
 
 # AI Agent
 OPENROUTER_API_KEY=your-openrouter-key
-KAITO_API_KEY=your-kaito-key
 
 # Platform
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
@@ -250,7 +301,7 @@ For automated runs, set up a cron job:
 
 ```bash
 # Run every 6 hours
-0 */6 * * * curl -X POST https://blinktip.xyz/api/agent/run
+0 */6 * * * curl -X POST https://blink-tip.vercel.app/api/agent/run
 ```
 
 See [agent/README.md](agent/README.md) for detailed agent documentation.
@@ -429,7 +480,7 @@ Areas we'd love help with:
 ## Learn More
 
 ### x402 Protocol
-- [x402 Specification](https://x402.sh)
+- [x402 Specification](https://x402.org)
 - [x402-solana Package](https://www.npmjs.com/package/x402-solana)
 - [Pay AI Facilitator](https://facilitator.payai.network)
 
@@ -447,15 +498,6 @@ Areas we'd love help with:
 - [CDP Documentation](https://docs.cdp.coinbase.com)
 - [CDP Wallets](https://docs.cdp.coinbase.com/server-wallets/docs/welcome)
 
----
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/BlinkTip/issues)
-- **Twitter**: [@blinktip](https://twitter.com/blinktip)
-- **Discord**: [Join our community](https://discord.gg/blinktip)
-
----
 
 ## License
 
@@ -463,4 +505,4 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ---
 
-**Built for the x402 Hackathon** | **Powered by Solana, x402, and Claude AI** | **Making crypto creator tipping autonomous and accessible**
+
