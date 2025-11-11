@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
+import { useSession, signIn } from 'next-auth/react'
 import Link from 'next/link'
 
 export default function RegisterPage() {
   const { publicKey } = useWallet()
+  const { data: session, status } = useSession()
 
   const [slug, setSlug] = useState('')
   const [name, setName] = useState('')
@@ -17,6 +19,21 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false)
   const [tipLink, setTipLink] = useState('')
   const [blinkUrl, setBlinkUrl] = useState('')
+
+  // Auto-fill form with Twitter data when session loads
+  useEffect(() => {
+    if (session?.user) {
+      if (session.user.twitterHandle && !slug) {
+        setSlug(session.user.twitterHandle)
+      }
+      if (session.user.twitterName && !name) {
+        setName(session.user.twitterName)
+      }
+      if (session.user.twitterAvatarUrl && !avatarUrl) {
+        setAvatarUrl(session.user.twitterAvatarUrl)
+      }
+    }
+  }, [session])
 
   const validateSlug = (value: string) => {
     const slugRegex = /^[a-z0-9_-]{3,50}$/
@@ -33,6 +50,11 @@ export default function RegisterPage() {
 
     if (!publicKey) {
       setError('Please connect your wallet first')
+      return
+    }
+
+    if (!session?.user?.twitterId) {
+      setError('Please verify your Twitter account first')
       return
     }
 
@@ -59,6 +81,10 @@ export default function RegisterPage() {
           name,
           bio: bio.trim() || undefined,
           avatar_url: avatarUrl.trim() || undefined,
+          twitter_id: session.user.twitterId,
+          twitter_handle: session.user.twitterHandle,
+          twitter_name: session.user.twitterName,
+          twitter_avatar_url: session.user.twitterAvatarUrl,
         }),
       })
 
@@ -174,108 +200,162 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          {!publicKey ? (
+          {/* Twitter Verification Step */}
+          {!session && status !== 'loading' && (
             <div className="text-center py-16">
-              <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-8 mb-6">
-                <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">
-                  Connect your Solana wallet to get started
+              <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-8 mb-6">
+                <p className="text-lg text-gray-700 dark:text-gray-300 mb-6 font-semibold">
+                  Step 1: Verify your Twitter account
                 </p>
-                <div className="flex justify-center">
-                  <WalletMultiButton />
-                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                  This prevents spam and ensures one creator per Twitter account
+                </p>
+                <button
+                  onClick={() => signIn('twitter')}
+                  className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold inline-flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                  </svg>
+                  Sign in with Twitter
+                </button>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Supports Phantom, Solflare, Coinbase Wallet, and more
-              </p>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-gray-200 dark:border-zinc-700">
-                <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-                  Connected Wallet
-                </label>
-                <input
-                  type="text"
-                  value={publicKey.toBase58()}
-                  disabled
-                  className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded-lg text-sm font-mono"
-                />
-              </div>
+          )}
 
-              <div>
-                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
-                  Your Slug <span className="text-red-500">*</span>
-                </label>
-                <div className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-2 border-2 border-purple-200 dark:border-purple-800">
-                  <span className="text-gray-500 dark:text-gray-400 text-sm px-2">blink-tip.vercel.app/tip/</span>
-                  <input
-                    type="text"
-                    value={slug}
-                    onChange={handleSlugChange}
-                    placeholder="your-slug"
-                    required
-                    className="flex-1 px-4 py-3 bg-white dark:bg-zinc-900 border-none rounded-lg focus:ring-2 focus:ring-purple-600 outline-none font-semibold"
-                  />
+          {status === 'loading' && (
+            <div className="text-center py-16">
+              <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+            </div>
+          )}
+
+          {/* Wallet Connection + Form */}
+          {session && (
+            <>
+              {/* Show Twitter verification success */}
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6 flex items-center gap-3">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <div>
+                  <p className="font-semibold text-green-900 dark:text-green-200">
+                    Twitter Verified: @{session.user.twitterHandle}
+                  </p>
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    Your profile will be linked to this Twitter account
+                  </p>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-1">
-                  3-50 characters: lowercase letters, numbers, hyphens, underscores
-                </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
-                  Display Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your Name"
-                  required
-                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
-                  Bio
-                </label>
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell people about yourself..."
-                  rows={4}
-                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none resize-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
-                  Avatar URL
-                </label>
-                <input
-                  type="url"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="https://example.com/avatar.jpg"
-                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition-all"
-                />
-              </div>
-
-              {error && (
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-xl">
-                  <p className="text-red-700 dark:text-red-300 font-semibold">{error}</p>
+              {!publicKey ? (
+                <div className="text-center py-16">
+                  <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-8 mb-6">
+                    <p className="text-lg text-gray-700 dark:text-gray-300 mb-6 font-semibold">
+                      Step 2: Connect your Solana wallet
+                    </p>
+                    <div className="flex justify-center">
+                      <WalletMultiButton />
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Supports Phantom, Solflare, Coinbase Wallet, and more
+                  </p>
                 </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-gray-200 dark:border-zinc-700">
+                    <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                      Connected Wallet
+                    </label>
+                    <input
+                      type="text"
+                      value={publicKey.toBase58()}
+                      disabled
+                      className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded-lg text-sm font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
+                      Your Slug <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-2 border-2 border-purple-200 dark:border-purple-800">
+                      <span className="text-gray-500 dark:text-gray-400 text-sm px-2">blink-tip.vercel.app/tip/</span>
+                      <input
+                        type="text"
+                        value={slug}
+                        onChange={handleSlugChange}
+                        placeholder="your-slug"
+                        required
+                        className="flex-1 px-4 py-3 bg-white dark:bg-zinc-900 border-none rounded-lg focus:ring-2 focus:ring-purple-600 outline-none font-semibold"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-1">
+                      Auto-filled from Twitter: @{session.user.twitterHandle}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
+                      Display Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Your Name"
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
+                      Bio
+                    </label>
+                    <textarea
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Tell people about yourself..."
+                      rows={4}
+                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none resize-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-200">
+                      Avatar URL
+                    </label>
+                    <input
+                      type="url"
+                      value={avatarUrl}
+                      onChange={(e) => setAvatarUrl(e.target.value)}
+                      placeholder="https://example.com/avatar.jpg"
+                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition-all"
+                    />
+                    {avatarUrl && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-1">
+                        Auto-filled from Twitter profile picture
+                      </p>
+                    )}
+                  </div>
+
+                  {error && (
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-xl">
+                      <p className="text-red-700 dark:text-red-300 font-semibold">{error}</p>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    {loading ? 'Creating Profile...' : 'Create Your Tip Page'}
+                  </button>
+                </form>
               )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
-              >
-                {loading ? 'Creating Profile...' : 'Create Your Tip Page'}
-              </button>
-            </form>
+            </>
           )}
         </div>
       </div>
