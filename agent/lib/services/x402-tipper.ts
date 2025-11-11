@@ -1,35 +1,21 @@
 /**
- * x402 Tipping Service for Agent (EXPERIMENTAL - NOT CURRENTLY WORKING)
+ * x402 Tipping Service for Agent (EXPERIMENTAL)
  *
- * STATUS: This implementation is ~95% complete but currently fails with a Solana-specific
+ * STATUS: This implementation failswith a Solana-specific
  * validation error from the x402 facilitator.
  *
  * ERROR: "invalid_exact_svm_payload_transaction_instructions_length"
- * - This error is NOT documented in the x402 specification
+ * - This error is NOT documented in the x402 specification 
  * - Occurs during facilitator.verifyPayment() call
- * - Human browser-based tipping works perfectly with the same endpoint
- * - The x402 documentation confirms autonomous agents ARE supported
- *
  * ISSUE: The facilitator is rejecting the transaction structure we're building.
  * It appears to be validating the number of compiled instructions and finding
  * a mismatch with what it expects for the Solana "exact" payment scheme.
- *
- * WHAT WE TRIED:
- * 1. Building VersionedTransaction with single SPL token transfer instruction
- * 2. Using extra.feePayer from payment requirements as fee payer
- * 3. Using payTo from payment requirements as fee payer
- * 4. Creating token accounts separately before x402 transaction
- * 5. Signing with CDP wallet (server-side Coinbase Developer Platform wallet)
- *
+ 
  * WAITING FOR: Clarification from x402/Pay AI team on correct Solana transaction
  * structure for autonomous agents in Node.js environment.
  *
  * MEANWHILE: Agent uses direct CDP wallet transfers (see cdp-tipper.ts)
- *
- * This code is preserved for future use once the x402 Solana transaction
- * format is clarified by the facilitator team.
- *
- * Server-side implementation using x402-solana utilities
+
  */
 
 import { FacilitatorClient, type PaymentRequirements } from "x402-solana/server";
@@ -69,7 +55,7 @@ export interface X402TipResult {
 /**
  * Tip a creator via x402 protocol
  *
- * @param creatorSlug - Creator's slug (e.g., "neryl")
+ * @param creatorSlug - Creator's slug 
  * @param amountUSDC - Tip amount in USDC
  * @param reason - AI reasoning for tip
  * @returns Tip result with transaction signature
@@ -105,7 +91,6 @@ export async function tipCreatorViaX402(
     const { creator } = await creatorResponse.json();
     const agentWallet = await getOrCreateAgentWallet();
 
-    // Step 1: GET the x402 endpoint to get payment requirements
     const x402Endpoint = `${BASE_URL}/api/x402/tip/${creatorSlug}/pay-solana?amount=${amountUSDC}&agent_id=blinktip_agent&content_url=https://twitter.com/${creator.twitter_handle}`;
 
     console.log(`[x402 Tipper] Fetching payment requirements...`);
@@ -127,7 +112,7 @@ export async function tipCreatorViaX402(
     console.log(`[x402 Tipper] Max amount: ${paymentRequirements.maxAmountRequired} micro-USDC`);
     console.log(`[x402 Tipper] Pay to: ${paymentRequirements.payTo}`);
 
-    // Step 2: Get fee payer from payment requirements
+    // Get fee payer from payment requirements
     // Use extra.feePayer if available (facilitator), otherwise payTo (creator)
     const feePayerAddress = paymentRequirements.extra?.feePayer
       ? (paymentRequirements.extra.feePayer as string)
