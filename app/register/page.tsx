@@ -85,6 +85,8 @@ export default function RegisterPage() {
           twitter_handle: session.user.twitterHandle,
           twitter_name: session.user.twitterName,
           twitter_avatar_url: session.user.twitterAvatarUrl,
+          twitter_follower_count: session.user.twitterFollowerCount,
+          twitter_created_at: session.user.twitterCreatedAt,
         }),
       })
 

@@ -7,6 +7,12 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.TWITTER_CLIENT_ID!,
       clientSecret: process.env.TWITTER_CLIENT_SECRET!,
       version: '2.0',
+      userinfo: {
+        url: 'https://api.twitter.com/2/users/me',
+        params: {
+          'user.fields': 'profile_image_url,public_metrics,created_at,verified',
+        },
+      },
     }),
   ],
   callbacks: {
@@ -18,6 +24,9 @@ export const authOptions: NextAuthOptions = {
         token.twitterHandle = twitterProfile.data?.username
         token.twitterName = twitterProfile.data?.name
         token.twitterAvatarUrl = twitterProfile.data?.profile_image_url
+        token.twitterFollowerCount = twitterProfile.data?.public_metrics?.followers_count
+        token.twitterCreatedAt = twitterProfile.data?.created_at
+        token.twitterVerified = twitterProfile.data?.verified
       }
       return token
     },
@@ -28,6 +37,9 @@ export const authOptions: NextAuthOptions = {
         session.user.twitterHandle = token.twitterHandle as string
         session.user.twitterName = token.twitterName as string
         session.user.twitterAvatarUrl = token.twitterAvatarUrl as string
+        session.user.twitterFollowerCount = token.twitterFollowerCount as number
+        session.user.twitterCreatedAt = token.twitterCreatedAt as string
+        session.user.twitterVerified = token.twitterVerified as boolean
       }
       return session
     },

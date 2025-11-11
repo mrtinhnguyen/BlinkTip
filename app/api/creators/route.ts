@@ -4,7 +4,19 @@ import { supabase } from '@/lib/supabase'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { slug, wallet_address, name, bio, avatar_url } = body
+    const {
+      slug,
+      wallet_address,
+      name,
+      bio,
+      avatar_url,
+      twitter_id,
+      twitter_handle,
+      twitter_name,
+      twitter_avatar_url,
+      twitter_follower_count,
+      twitter_created_at
+    } = body
 
     // Validate required fields
     if (!slug || !wallet_address || !name) {
@@ -23,20 +35,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if slug or wallet already exists
-    const { data: existing } = await supabase
+    const { data: existing, error: checkError } = await supabase
       .from('creators')
       .select('slug, wallet_address')
       .or(`slug.eq.${slug},wallet_address.eq.${wallet_address}`)
-      .single()
 
-    if (existing) {
-      if (existing.slug === slug) {
+    // If there's data returned, check for conflicts
+    if (existing && existing.length > 0) {
+      const conflict = existing[0]
+      if (conflict.slug === slug) {
         return NextResponse.json(
           { error: 'Slug already taken' },
           { status: 409 }
         )
       }
-      if (existing.wallet_address === wallet_address) {
+      if (conflict.wallet_address === wallet_address) {
         return NextResponse.json(
           { error: 'Wallet address already registered' },
           { status: 409 }
@@ -53,6 +66,13 @@ export async function POST(request: NextRequest) {
         name,
         bio: bio || null,
         avatar_url: avatar_url || null,
+        twitter_id: twitter_id || null,
+        twitter_handle: twitter_handle || null,
+        twitter_name: twitter_name || null,
+        twitter_avatar_url: twitter_avatar_url || null,
+        twitter_verified: !!twitter_id, // If we have twitter_id, they're verified
+        twitter_follower_count: twitter_follower_count || 0,
+        twitter_created_at: twitter_created_at || null,
       })
       .select()
       .single()
