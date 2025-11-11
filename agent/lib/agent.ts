@@ -28,11 +28,11 @@ import {
   getOrCreateAgentWallet,
 } from "./services/cdp-wallet";
 import { tipCreatorViaCDP } from "./services/cdp-tipper";
-// import { tipCreatorViaX402 } from "./services/x402-tipper"; // Experimental - not working yet
+// import { tipCreatorViaX402 } from "./services/x402-tipper"; // Experimental
 
 // Agent configuration
 const AGENT_CONFIG = {
-  MIN_YAPS_THRESHOLD: 0, // Minimum 7-day Yaps score to consider (0 = no minimum for testing)
+  MIN_YAPS_THRESHOLD: 0, // Minimum 7-day Yaps score to consider 
   TIP_AMOUNT_USDC: 0.1, // $0.10 per tip
   MAX_TIPS_PER_RUN: 5, // Max tips in a single run
   DAYS_BETWEEN_TIPS: 7, // Don't tip same creator within 7 days
@@ -197,7 +197,6 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
   };
 
   try {
-    // Step 1: Check agent wallet
     console.log("📍 Step 1: Checking agent wallet...\n");
     const wallet = await getOrCreateAgentWallet();
     const balance = await getAgentBalance();
@@ -211,15 +210,14 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
 
     if (!balance.canTip) {
       const error = `Insufficient funds. Need at least $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC.`;
-      console.log(`❌ ${error}\n`);
+      console.log(` ${error}\n`);
       result.errors.push(error);
       return result;
     }
 
     console.log(`✓ Wallet ready. Can send up to ${Math.floor(balance.balanceUSDC / AGENT_CONFIG.TIP_AMOUNT_USDC)} tips.\n`);
 
-    // Step 2: Fetch all verified creators
-    console.log("📍 Step 2: Fetching verified creators...\n");
+    console.log(" Step 2: Fetching verified creators...\n");
     const creators = await getAllVerifiedCreators();
     console.log(`Found ${creators.length} verified creators\n`);
 
@@ -229,12 +227,10 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
       return result;
     }
 
-    // Step 3: Analyze each creator
-    console.log("📍 Step 3: Analyzing creators...\n");
+    console.log(" Step 3: Analyzing creators...\n");
     let tipsCreated = 0;
 
     for (const creator of creators) {
-      // Stop if we've hit max tips for this run
       if (tipsCreated >= AGENT_CONFIG.MAX_TIPS_PER_RUN) {
         console.log(`\n✓ Reached max tips per run (${AGENT_CONFIG.MAX_TIPS_PER_RUN}). Stopping.\n`);
         break;
@@ -244,16 +240,13 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
       result.creatorsAnalyzed++;
 
       try {
-        // Get Yaps score
         const yapsScore = await getYapsScore(creator.twitterHandle);
 
-        // Check recent tips
         const recentTipCheck = await checkRecentAgentTip(
           creator.twitterHandle,
           AGENT_CONFIG.DAYS_BETWEEN_TIPS
         );
 
-        // Quick filters before AI decision
         if (recentTipCheck.wasTippedRecently) {
           console.log(`⏭️  SKIP - ${recentTipCheck.recommendation}`);
           result.skipped++;
@@ -274,12 +267,7 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
           continue;
         }
 
-        // NOTE: Removed strict Yaps threshold check for MVP
-        // We now let the AI decide based on multiple factors including social metrics
-        // Old logic: if (!meetsYapsThreshold(yapsScore, AGENT_CONFIG.MIN_YAPS_THRESHOLD)) { ... }
-
-        // AI decision
-        console.log("🤔 Asking AI for decision...");
+        console.log(" Asking AI for decision...");
         const aiResponse = await aiDecision(creator, yapsScore, recentTipCheck);
         console.log(`AI Decision: ${aiResponse.decision} - ${aiResponse.reason}`);
 
@@ -302,8 +290,7 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
           continue;
         }
 
-        // TIP via CDP wallet!
-        console.log(`\n💰 Sending $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC tip...`);
+        console.log(`\n Sending $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC tip...`);
         const tipResult = await tipCreatorViaCDP(
           creator.walletAddress,
           AGENT_CONFIG.TIP_AMOUNT_USDC,
@@ -313,7 +300,6 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
         if (tipResult.success) {
           console.log(`✓ TIP SENT! TX: ${tipResult.signature}`);
 
-          // Record in database
           const tipId = await recordAgentTip(
             creator.id,
             AGENT_CONFIG.TIP_AMOUNT_USDC,
@@ -342,12 +328,12 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
           tipsCreated++;
         } else {
           const error = `Failed to tip @${creator.twitterHandle}: ${tipResult.error}`;
-          console.log(`❌ ${error}`);
+          console.log(` ${error}`);
           result.errors.push(error);
         }
       } catch (error: any) {
         const errorMsg = `Error analyzing @${creator.twitterHandle}: ${error.message}`;
-        console.error(`❌ ${errorMsg}`);
+        console.error(` ${errorMsg}`);
         result.errors.push(errorMsg);
       }
 
@@ -357,13 +343,12 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
 
     result.tipsCreated = tipsCreated;
 
-    // Step 4: Get final stats
-    console.log("\n📍 Step 4: Fetching agent statistics...\n");
+    console.log("\n Step 4: Fetching agent statistics...\n");
     result.stats = await getAgentStats();
 
     result.success = true;
 
-    console.log("\n🤖 ===== Agent Run Complete ===== 🤖\n");
+    console.log("\n ===== Agent Run Complete ===== \n");
     console.log(`Creators Analyzed: ${result.creatorsAnalyzed}`);
     console.log(`Tips Created: ${result.tipsCreated}`);
     console.log(`Skipped: ${result.skipped}`);
@@ -375,7 +360,7 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
 
     return result;
   } catch (error: any) {
-    console.error("\n❌ Agent run failed:", error);
+    console.error("\n Agent run failed:", error);
     result.errors.push(error.message);
     return result;
   }
