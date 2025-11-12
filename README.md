@@ -46,7 +46,7 @@ There's no single, universal tip link that works EVERYWHERE and accepts payments
 ### One Link, Everywhere
 
 1. **Creator signs up** with their Solana wallet
-2. **Gets ONE universal tip link**: `blink-tip.vercel.app/tip/yagamilighto`
+2. **Gets ONE universal tip link**: `blink-tip.vercel.app/tip/nellycyberpro`
 3. **Shares it EVERYWHERE**: Instagram bio, TikTok bio, Twitter profile, Farcaster, Medium articles, email signature, anywhere
 4. **Anyone can tip** - humans and AI agents alike
 
@@ -54,12 +54,12 @@ There's no single, universal tip link that works EVERYWHERE and accepts payments
 
 **On Twitter/X (Solana Blinks)**
 ```
-https://blink-tip.vercel.app/tip/ujooba
-→ Unfurls as an interactive Solana Blink
+https://blink-tip.vercel.app/tip/nellycyberpro
+→ Unfurls as an interactive Solana Blink once action is registered
 → Followers click and tip instantly without leaving Twitter
 → Powered by Solana Actions
 ```
-[See it live](https://dial.to/?action=solana-action:https://blink-tip.vercel.app/api/actions/tip/ujooba)
+[See it live](https://dial.to/?action=solana-action:https://blink-tip.vercel.app/api/actions/tip/nellycyberpro)
 
 **Everywhere Else (x402 Protocol)**
 
