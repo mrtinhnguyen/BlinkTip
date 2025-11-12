@@ -105,8 +105,8 @@ This demonstrates how ANY autonomous agent can discover and reward creators usin
    - Email signature: Include your tip link
    - Personal website: Link from any page
 
-4. **Receive tips** in USDC directly to your Solana wallet from:
-   - Humans on any platform
+4. **Receive tips** in USDC or Phantom CASH directly to your Solana wallet from:
+   - Humans on any platform (they choose the token)
    - Autonomous AI agents discovering your content
 
 ### For Human Supporters
@@ -120,6 +120,7 @@ This demonstrates how ANY autonomous agent can discover and reward creators usin
 **On Any Other Platform:**
 - Click creator's tip link from Instagram, TikTok, etc.
 - Choose tip amount
+- **Choose token: USDC or Phantom CASH** 👻
 - Browser creates x402 payment transaction
 - Sign with your wallet
 - Payment verified on-chain
@@ -174,6 +175,16 @@ Our platform demonstrates this with a Claude Sonnet 4-powered agent:
 - Support custom tip amounts
 - Powered by x402 protocol
 
+### Multi-Token Support 👻💵
+- **USDC**: Circle's USD stablecoin (standard)
+- **Phantom CASH**: New USD stablecoin by Phantom/Bridge/Stripe
+  - Launched Sept 2025
+  - 1:1 USD-pegged
+  - Gasless swaps in Phantom wallet
+  - Perfect for Phantom wallet users
+- Supporters choose their preferred token when tipping
+- Both tokens work seamlessly with x402 protocol
+
 ---
 
 ## Technology Stack
@@ -192,7 +203,7 @@ Our platform demonstrates this with a Claude Sonnet 4-powered agent:
 
 ### Blockchain
 - **Network**: Solana (Devnet for testing, Mainnet ready)
-- **Token**: USDC (SPL token)
+- **Tokens**: USDC & Phantom CASH (SPL stablecoins)
 - **Payment Protocol**: x402 with facilitator verification
 
 ### AI Agent

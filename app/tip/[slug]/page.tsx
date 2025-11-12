@@ -14,7 +14,12 @@ type Creator = {
   wallet_address: string
 }
 
-// x402 uses USDC, not SOL
+// Token options for tipping
+const TOKENS = {
+  USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC mint
+  CASH: 'CASHedBw9NfhsLBXq1WNVfueVznx255j8LLTScto3S6s', // Phantom CASH mint
+}
+
 const TIP_AMOUNTS = [0.01, 0.05, 0.1]
 
 export default function TipPage() {
@@ -27,6 +32,7 @@ export default function TipPage() {
   const [loading, setLoading] = useState(true)
   const [selectedAmount, setSelectedAmount] = useState(0.01)
   const [customAmount, setCustomAmount] = useState('')
+  const [selectedToken, setSelectedToken] = useState<'USDC' | 'CASH'>('USDC')
   const [tipping, setTipping] = useState(false)
   const [txSignature, setTxSignature] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -70,7 +76,7 @@ export default function TipPage() {
         network: process.env.NEXT_PUBLIC_NETWORK === 'solana-mainnet-beta' ? 'solana' : 'solana-devnet',
       })
 
-      console.log('[x402] Starting tip flow...', { amount, creator: slug })
+      console.log('[x402] Starting tip flow...', { amount, creator: slug, token: selectedToken })
 
       // Make x402 payment request
       // The client automatically handles:
@@ -81,7 +87,7 @@ export default function TipPage() {
       // 5. Sends X-PAYMENT header
       // 6. Returns success response
       const response = await x402Client.fetch(
-        `/api/x402/tip/${slug}/pay-solana?amount=${amount}`,
+        `/api/x402/tip/${slug}/pay-solana?amount=${amount}&token=${selectedToken}`,
         {
           method: 'GET',
         }
@@ -169,7 +175,7 @@ export default function TipPage() {
           <div className="p-8">
             <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl">
               <p className="text-sm text-blue-900 dark:text-blue-200">
-                <strong>💡 Powered by x402:</strong> Instant USDC tips via Solana. Your wallet signs the transaction, and it's verified on-chain.
+                <strong>💡 Powered by x402:</strong> Instant stablecoin tips via Solana. Choose USDC or Phantom CASH. Your wallet signs the transaction, and it's verified on-chain.
               </p>
             </div>
 
@@ -196,7 +202,7 @@ export default function TipPage() {
 
             <div className="mb-6">
               <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">
-                Or Enter Custom Amount (USDC)
+                Or Enter Custom Amount
               </label>
               <input
                 type="number"
@@ -207,6 +213,43 @@ export default function TipPage() {
                 placeholder="0.00"
                 className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none text-lg font-semibold transition-all"
               />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">
+                Choose Token
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedToken('USDC')}
+                  className={`py-4 px-4 rounded-xl font-bold transition-all transform hover:scale-105 flex items-center justify-center gap-2 ${
+                    selectedToken === 'USDC'
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
+                      : 'bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-gray-200'
+                  }`}
+                >
+                  <span className="text-2xl">💵</span>
+                  <span>USDC</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedToken('CASH')}
+                  className={`py-4 px-4 rounded-xl font-bold transition-all transform hover:scale-105 flex items-center justify-center gap-2 ${
+                    selectedToken === 'CASH'
+                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg'
+                      : 'bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-gray-200'
+                  }`}
+                >
+                  <span className="text-2xl">👻</span>
+                  <span>CASH</span>
+                </button>
+              </div>
+              {selectedToken === 'CASH' && (
+                <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 italic">
+                  Phantom CASH - USD stablecoin powered by Bridge
+                </p>
+              )}
             </div>
 
             {!publicKey ? (
@@ -226,7 +269,7 @@ export default function TipPage() {
               >
                 {tipping
                   ? 'Processing Payment...'
-                  : `Send $${customAmount || selectedAmount} USDC Tip`}
+                  : `Send $${customAmount || selectedAmount} ${selectedToken} Tip`}
               </button>
             )}
 

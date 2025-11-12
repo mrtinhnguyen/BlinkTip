@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { X402PaymentHandler } from 'x402-solana/server'
 import { supabase } from '@/lib/supabase'
 
-//  spl-token-faucet.com USDC Devnet mint (Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr)
-
-const USDC_DEVNET_MINT = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr'
+// Token mint addresses
+const TOKENS = {
+  USDC: 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr', // USDC Devnet
+  CASH: 'CASHedBw9NfhsLBXq1WNVfueVznx255j8LLTScto3S6s', // Phantom CASH
+}
 
 export async function GET(
   request: NextRequest,
@@ -37,22 +39,24 @@ export async function GET(
 
     const url = new URL(request.url)
     const amount = url.searchParams.get('amount') || '0.01'
+    const token = (url.searchParams.get('token') || 'USDC') as 'USDC' | 'CASH'
+    const tokenMint = TOKENS[token]
     const amountInMicroUsdc = Math.floor(parseFloat(amount) * 1_000_000).toString()
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const resourceUrl = `${baseUrl}/api/x402/tip/${slug}/pay-solana?amount=${amount}` as `${string}://${string}`
+    const resourceUrl = `${baseUrl}/api/x402/tip/${slug}/pay-solana?amount=${amount}&token=${token}` as `${string}://${string}`
 
     const paymentRequirements = await x402Handler.createPaymentRequirements({
       price: {
         amount: amountInMicroUsdc,
         asset: {
-          address: USDC_DEVNET_MINT,
+          address: tokenMint,
           decimals: 6,
         },
       },
       network: 'solana-devnet',
       config: {
-        description: `Tip ${creator.name} for quality content`,
+        description: `Tip ${creator.name} with ${token} for quality content`,
         resource: resourceUrl,
       },
     })
