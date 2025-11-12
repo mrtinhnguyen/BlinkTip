@@ -28,7 +28,7 @@ import {
   getOrCreateAgentWallet,
 } from "./services/cdp-wallet";
 import { tipCreatorViaCDP } from "./services/cdp-tipper";
-// import { tipCreatorViaX402 } from "./services/x402-tipper"; // Experimental
+import { tipCreatorViaX402 } from "./services/x402-tipper"; // Testing x402 fix
 
 // Agent configuration
 const AGENT_CONFIG = {
@@ -290,9 +290,9 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
           continue;
         }
 
-        console.log(`\n Sending $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC tip...`);
-        const tipResult = await tipCreatorViaCDP(
-          creator.walletAddress,
+        console.log(`\n💰 Sending $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC tip via x402...`);
+        const tipResult = await tipCreatorViaX402(
+          creator.slug,
           AGENT_CONFIG.TIP_AMOUNT_USDC,
           aiResponse.reason
         );
