@@ -29,10 +29,12 @@ export async function POST(request: NextRequest) {
         data: {
           creatorsAnalyzed: result.creatorsAnalyzed,
           tipsCreated: result.tipsCreated,
+          solanaTips: result.solanaTips,
+          celoTips: result.celoTips,
           skipped: result.skipped,
           errors: result.errors,
           decisions: result.decisions,
-          walletBalance: result.walletBalance,
+          walletBalances: result.walletBalances,
           stats: result.stats,
         },
         timestamp: new Date().toISOString(),
