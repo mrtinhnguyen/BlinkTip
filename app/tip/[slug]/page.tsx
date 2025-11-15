@@ -5,9 +5,9 @@ import { useParams } from 'next/navigation'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { createX402Client } from 'x402-solana/client'
-import { ConnectButton, useActiveAccount, useSendTransaction } from "thirdweb/react"
+import { ConnectButton, useActiveAccount, useActiveWallet } from "thirdweb/react"
 import { createThirdwebClient, defineChain } from "thirdweb"
-import { transfer } from "thirdweb/extensions/erc20"
+import { wrapFetchWithPayment } from "thirdweb/x402"
 
 // Initialize thirdweb client for frontend
 const thirdwebClient = createThirdwebClient({
@@ -53,7 +53,7 @@ export default function TipPage() {
 
   // Celo/EVM wallet (thirdweb)
   const celoAccount = useActiveAccount()
-  const { mutate: sendCeloTx } = useSendTransaction()
+  const celoWallet = useActiveWallet()
 
   const [creator, setCreator] = useState<Creator | null>(null)
   const [loading, setLoading] = useState(true)
@@ -126,40 +126,72 @@ export default function TipPage() {
           setTxSignature(result.tip.transaction)
         }
       } else if (selectedChain === 'celo') {
-        // Celo tipping via direct ERC20 transfer
-        if (!celoAccount || !creator?.celo_wallet_address) {
+        // Celo tipping via x402 protocol
+        if (!celoAccount || !celoWallet || !creator?.celo_wallet_address) {
           throw new Error('Please connect your EVM wallet or creator has no Celo address')
         }
 
-        console.log('[Celo] Starting tip flow...', { amount, creator: slug, token: selectedToken })
+        console.log('[x402-Celo] Starting x402 tip flow...', { amount, creator: slug, token: selectedToken })
 
-        const tokenAddress = selectedToken === 'cUSD' ? CELO_TOKENS.cUSD : CELO_TOKENS.USDC
+        // Debug wallet state
+        const walletAccount = celoWallet.getAccount()
+        const walletChain = celoWallet.getChain()
+        console.log('[x402-Celo] Wallet account:', walletAccount?.address)
+        console.log('[x402-Celo] Wallet chain:', walletChain?.id, walletChain?.name)
 
-        // Prepare ERC20 transfer transaction
-        const transaction = transfer({
-          contract: {
-            client: thirdwebClient,
-            chain: celoSepolia,
-            address: tokenAddress as `0x${string}`,
-          },
-          to: creator.celo_wallet_address as `0x${string}`,
-          amount: amount.toString(),
-        })
+        if (!walletAccount || !walletChain) {
+          throw new Error('Wallet not properly connected. Please reconnect your wallet.')
+        }
 
-        // Send transaction
-        sendCeloTx(transaction, {
-          onSuccess: (result) => {
-            console.log('[Celo] Transaction successful:', result)
-            setTxSignature(result.transactionHash)
-            setTipping(false)
-          },
-          onError: (err) => {
-            console.error('[Celo] Transaction failed:', err)
-            setError(err.message || 'Celo transaction failed')
-            setTipping(false)
-          },
-        })
-        return // Early return since transaction is async
+        // Calculate max payment amount in base units
+        // For cUSD (18 decimals) or USDC (6 decimals)
+        const maxPaymentAmount = selectedToken === 'cUSD'
+          ? BigInt(Math.ceil(amount * 1.1 * 1e18)) // 10% buffer for cUSD (18 decimals)
+          : BigInt(Math.ceil(amount * 1.1 * 1e6))  // 10% buffer for USDC (6 decimals)
+
+        console.log('[x402-Celo] Max payment amount:', maxPaymentAmount.toString())
+
+        // Wrap fetch with x402 payment handling
+        const fetchWithPay = wrapFetchWithPayment(
+          fetch,
+          thirdwebClient,
+          celoWallet,
+          maxPaymentAmount
+        )
+
+        console.log('[x402-Celo] Making x402 request with auto-payment handling...')
+
+        // Make request - wrapFetchWithPayment handles the 402 flow automatically
+        let response: Response
+        try {
+          response = await fetchWithPay(
+            `/api/x402/tip/${slug}/pay-celo?amount=${amount}&token=${selectedToken}`,
+            { method: 'GET' }
+          )
+          console.log('[x402-Celo] Response status:', response.status)
+        } catch (fetchError) {
+          console.error('[x402-Celo] Fetch with payment error:', fetchError)
+          throw new Error(`Payment signing failed: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`)
+        }
+
+        if (!response.ok) {
+          // Clone response before reading body to avoid "body already read" errors
+          const responseClone = response.clone()
+          try {
+            const errorData = await responseClone.json()
+            console.error('[x402-Celo] Error response:', errorData)
+            throw new Error(errorData.error || `x402 payment failed with status ${response.status}`)
+          } catch {
+            throw new Error(`x402 payment failed with status ${response.status}`)
+          }
+        }
+
+        const result = await response.json()
+        console.log('[x402-Celo] Payment successful:', result)
+
+        if (result.transactionHash) {
+          setTxSignature(result.transactionHash)
+        }
       }
 
       setError(null)
@@ -167,10 +199,7 @@ export default function TipPage() {
       console.error('[Tip] Error:', err)
       setError(err instanceof Error ? err.message : 'Failed to send tip')
     } finally {
-      if (selectedChain === 'solana') {
-        setTipping(false)
-      }
-      // For Celo, tipping is set to false in the onSuccess/onError callbacks
+      setTipping(false)
     }
   }
 
@@ -447,7 +476,7 @@ export default function TipPage() {
                 <p className="text-green-700 dark:text-green-400 mb-4">
                   {selectedChain === 'solana'
                     ? 'Your tip was verified and settled on Solana via the x402 protocol. Thank you for supporting this creator!'
-                    : 'Your tip was sent on Celo blockchain. Thank you for supporting this creator!'}
+                    : 'Your tip was verified and settled on Celo via the x402 protocol. Thank you for supporting this creator!'}
                 </p>
                 {explorerUrl && (
                   <a
