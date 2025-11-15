@@ -17,9 +17,8 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 const THIRDWEB_SECRET_KEY = process.env.THIRDWEB_SECRET_KEY!;
 const CELO_USDC_ADAPTER = process.env.CELO_USDC_ADAPTER!;
 
-// Note: For server-side agent, we need a private key to create account
-// In production, this should be stored securely (e.g., in CDP or thirdweb's wallet service)
-// For now, we'll use thirdweb's server wallet API directly
+
+// using thirdweb's server wallet API directly
 
 export interface CeloTipResult {
   success: boolean;
@@ -32,7 +31,7 @@ export interface CeloTipResult {
 /**
  * Tip a creator on Celo via x402 protocol
  *
- * Uses thirdweb's wrapFetchWithPayment to handle x402 flow automatically
+ * thirdweb's wrapFetchWithPayment to handle x402 flow automatically
  *
  * @param creatorSlug - Creator's slug
  * @param amountUSDC - Tip amount in USDC/cUSD
@@ -85,11 +84,10 @@ export async function tipCreatorViaCeloX402(
 
     console.log(`[Celo Tipper] Calling x402 endpoint...`);
 
-    // NOTE: wrapFetchWithPayment requires a wallet with private key for signing
-    // For server-side agent, we need to use thirdweb's transaction API directly
-    // instead of the client-side wrapFetchWithPayment
+    // wrapFetchWithPayment requires a wallet with private key for signing
+    
 
-    // Alternative approach: Use thirdweb's transaction API
+    // Use thirdweb's transaction API
     const result = await tipViaThirdwebAPI(
       x402Endpoint,
       creator,
