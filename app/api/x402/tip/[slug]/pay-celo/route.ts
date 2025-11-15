@@ -60,6 +60,9 @@ export async function GET(
     const agentId = searchParams.get("agent_id");
     const contentUrl = searchParams.get("content_url");
 
+    // Check for x-payment header first (if present, this is a retry with payment)
+    const paymentHeader = request.headers.get("x-payment");
+
     // Validate amount
     if (!amount || amount <= 0) {
       return NextResponse.json(
@@ -102,19 +105,16 @@ export async function GET(
     let priceConfig: any;
 
     if (token === "USDC") {
-      // USDC has 6 decimals - use token address in price config
-      // But use adapter for feeCurrency
       priceConfig = {
-        amount: (amount * 1_000_000).toString(), // Convert to 6 decimal units
+        amount: (amount * 1_000_000).toString(),
         asset: {
           address: CELO_USDC_TOKEN,
           decimals: 6,
         },
       };
     } else if (token === "cUSD") {
-      // cUSD has 18 decimals - use token address directly
       priceConfig = {
-        amount: (amount * 1e18).toString(), // Convert to 18 decimal units
+        amount: (amount * 1e18).toString(),
         asset: {
           address: CELO_CUSD_ADDRESS,
           decimals: 18,
@@ -125,27 +125,126 @@ export async function GET(
     // Construct resource URL (this endpoint)
     const resourceUrl = `${request.nextUrl.origin}${request.nextUrl.pathname}${request.nextUrl.search}`;
 
-    // Use thirdweb's settlePayment with no paymentData (triggers 402 response)
-    const result = await settlePayment({
-      resourceUrl,
-      method: "GET",
-      paymentData: null, // No payment yet, will return 402
-      payTo: creator.celo_wallet_address,
-      network: celoSepolia,
-      price: priceConfig,
-      facilitator: thirdwebFacilitator,
-      routeConfig: {
-        description: `Tip ${creator.name} (@${creator.slug}) on BlinkTip`,
-        mimeType: "application/json",
-        maxTimeoutSeconds: 300,
-      },
-    });
+    if (paymentHeader) {
+      // Process payment - X-PAYMENT header is present
+      console.log("[Celo x402] Received payment header, settling payment...");
+      console.log(`  Amount: ${amount} ${token}`);
+      console.log(`  Creator: ${creator.slug} (${creator.celo_wallet_address})`);
 
-    // Return the 402 response with payment requirements
-    return NextResponse.json(result.responseBody, {
-      status: result.status,
-      headers: result.responseHeaders,
-    });
+      const result = await settlePayment({
+        resourceUrl,
+        method: "GET",
+        paymentData: paymentHeader,
+        payTo: creator.celo_wallet_address,
+        network: celoSepolia,
+        price: priceConfig,
+        facilitator: thirdwebFacilitator,
+        routeConfig: {
+          description: `Tip ${creator.name} (@${creator.slug}) on BlinkTip`,
+          mimeType: "application/json",
+          maxTimeoutSeconds: 300,
+        },
+      });
+
+      if (result.status !== 200) {
+        console.error("[Celo x402] Payment failed:", (result as any).responseBody);
+        return NextResponse.json((result as any).responseBody, {
+          status: result.status,
+          headers: result.responseHeaders,
+        });
+      }
+
+      console.log("[Celo x402] ✓ Payment settled successfully");
+      const transactionHash = result.paymentReceipt?.transaction || "unknown";
+      console.log(`[Celo x402] Transaction hash: ${transactionHash}`);
+
+      // Record tip in database
+      const isAgentTip = !!agentId;
+      const source = isAgentTip ? "agent" : "human";
+
+      const { data: tip, error: tipError } = await supabase
+        .from("tips")
+        .insert({
+          creator_id: creator.id,
+          from_address: result.paymentReceipt?.payer || "unknown",
+          amount: amount,
+          token: token,
+          signature: transactionHash,
+          source: source,
+          status: "confirmed",
+          chain: "celo",
+          network: "celo-sepolia",
+          is_agent_tip: isAgentTip,
+          agent_reasoning: isAgentTip ? "Tipped via Celo x402 protocol" : null,
+          metadata: {
+            agent_id: agentId,
+            content_url: contentUrl,
+            protocol: "x402-celo",
+            facilitator: "thirdweb",
+          },
+        })
+        .select()
+        .single();
+
+      if (tipError) {
+        console.error("[Celo x402] Failed to record tip:", tipError);
+      } else {
+        console.log(`[Celo x402] ✓ Tip recorded in database (ID: ${tip.id})`);
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Tip sent successfully!",
+          amount: amount,
+          token: token,
+          chain: "celo",
+          network: "celo-sepolia",
+          transactionHash: transactionHash,
+          creator: {
+            slug: creator.slug,
+            name: creator.name,
+            wallet: creator.celo_wallet_address,
+          },
+        },
+        {
+          status: 200,
+          headers: result.responseHeaders,
+        }
+      );
+    } else {
+      // No payment header - return 402 with payment requirements
+      console.log("[Celo x402] No payment header, returning 402 payment requirements");
+      console.log(`  Creator wallet (payTo): ${creator.celo_wallet_address}`);
+      console.log(`  Server wallet (facilitator): ${THIRDWEB_SERVER_WALLET}`);
+
+      const result = await settlePayment({
+        resourceUrl,
+        method: "GET",
+        paymentData: null,
+        payTo: creator.celo_wallet_address,
+        network: celoSepolia,
+        price: priceConfig,
+        facilitator: thirdwebFacilitator,
+        routeConfig: {
+          description: `Tip ${creator.name} (@${creator.slug}) on BlinkTip`,
+          mimeType: "application/json",
+          maxTimeoutSeconds: 300,
+        },
+      });
+
+      const responseBody = result.status === 200
+        ? { success: true }
+        : (result as any).responseBody;
+
+      console.log("[Celo x402] 402 Response payTo:", (responseBody as any)?.accepts?.[0]?.payTo);
+      console.log("[Celo x402] 402 Response facilitator:", (responseBody as any)?.accepts?.[0]?.extra?.facilitatorAddress);
+
+      return NextResponse.json(responseBody, {
+        status: result.status,
+        headers: result.responseHeaders,
+      });
+    }
   } catch (error: unknown) {
     console.error("[Celo x402] GET error:", error);
     return NextResponse.json(
@@ -271,8 +370,8 @@ export async function POST(
 
     // Check if payment was successful
     if (result.status !== 200) {
-      console.error("[Celo x402] Payment failed:", result.responseBody);
-      return NextResponse.json(result.responseBody, {
+      console.error("[Celo x402] Payment failed:", (result as any).responseBody);
+      return NextResponse.json((result as any).responseBody, {
         status: result.status,
         headers: result.responseHeaders,
       });
@@ -281,10 +380,8 @@ export async function POST(
     console.log("[Celo x402] ✓ Payment settled successfully");
 
     // Extract transaction hash from response
-    // Note: thirdweb's settlePayment returns transaction info in responseBody
-    const transactionHash = (result.responseBody as any)?.transactionHash ||
-                           (result.responseBody as any)?.txHash ||
-                           "unknown";
+    // thirdweb's settlePayment returns paymentReceipt with transaction
+    const transactionHash = result.paymentReceipt?.transaction || "unknown";
 
     console.log(`[Celo x402] Transaction hash: ${transactionHash}`);
 
