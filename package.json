@@ -9,7 +9,8 @@
     "test-api": "tsx --env-file=.env scripts/test-creator-api.ts",
     "test-x402": "tsx --env-file=.env scripts/test-x402-api.ts",
     "test-agent-wallet": "tsx --env-file=.env scripts/test-agent-wallet.ts",
-    "test-kaito": "tsx --env-file=.env scripts/test-kaito.ts"
+    "test-kaito": "tsx --env-file=.env scripts/test-kaito.ts",
+    "test-celo-wallet": "tsx --env-file=.env scripts/test-celo-wallet.ts"
   },
   "version": "0.1.0",
   "private": true,
@@ -39,6 +40,7 @@
     "next-auth": "^4.24.13",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "thirdweb": "^5.112.1",
     "viem": "^2.38.5",
     "x402-next": "^0.7.1",
     "x402-solana": "^0.1.3",
