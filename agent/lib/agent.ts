@@ -1,12 +1,18 @@
 /**
- * BlinkTip Autonomous Tipping Agent
+ * BlinkTip Autonomous Tipping Agent - Multi-Chain Edition
  *
  * This agent:
  * 1. Discovers verified creators from BlinkTip database
  * 2. Fetches their Kaito Yaps scores (influence metrics)
  * 3. Uses AI (OpenRouter + Claude) to decide who to tip
- * 4. Sends USDC tips via CDP Server-Side Wallet on Solana
+ * 4. Sends USDC tips on MULTIPLE chains:
+ *    - Solana (via CDP Server-Side Wallet + x402)
+ *    - Celo (via Thirdweb Server Wallet + x402)
  * 5. Logs all decisions to database for transparency
+ *
+ * Multi-Chain Strategy:
+ * - If creator supports BOTH chains: tip on BOTH ($0.05 each)
+ * - If creator supports ONE chain: tip on that chain ($0.10)
  */
 
 import { ChatOpenAI } from "@langchain/openai";
@@ -28,7 +34,9 @@ import {
   getOrCreateAgentWallet,
 } from "./services/cdp-wallet";
 import { tipCreatorViaCDP } from "./services/cdp-tipper";
-import { tipCreatorViaX402 } from "./services/x402-tipper"; // Testing x402 fix
+import { tipCreatorViaX402 } from "./services/x402-tipper";
+import { getAgentBalanceCelo } from "./services/celo/thirdweb-wallet";
+import { tipCreatorViaCeloX402 } from "./services/celo/celo-tipper";
 
 // Agent configuration
 const AGENT_CONFIG = {
@@ -42,6 +50,8 @@ export interface AgentRunResult {
   success: boolean;
   creatorsAnalyzed: number;
   tipsCreated: number;
+  solanaTips: number;
+  celoTips: number;
   skipped: number;
   errors: string[];
   decisions: Array<{
@@ -49,11 +59,19 @@ export interface AgentRunResult {
     decision: "TIP" | "SKIP";
     reason: string;
     amount?: number;
-    signature?: string;
+    chains?: string[]; // Which chains were tipped
+    signatures?: { chain: string; signature: string }[];
   }>;
-  walletBalance: {
-    sol: number;
-    usdc: number;
+  walletBalances: {
+    solana: {
+      sol: number;
+      usdc: number;
+    };
+    celo: {
+      celo: number;
+      usdc: number;
+      cusd: number;
+    };
   };
   stats: {
     totalDecisions: number;
@@ -189,10 +207,15 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
     success: false,
     creatorsAnalyzed: 0,
     tipsCreated: 0,
+    solanaTips: 0,
+    celoTips: 0,
     skipped: 0,
     errors: [],
     decisions: [],
-    walletBalance: { sol: 0, usdc: 0 },
+    walletBalances: {
+      solana: { sol: 0, usdc: 0 },
+      celo: { celo: 0, usdc: 0, cusd: 0 },
+    },
     stats: { totalDecisions: 0, totalTips: 0, totalSkips: 0, totalTippedUSDC: 0 },
   };
 
@@ -200,7 +223,7 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
     console.log("📍 Step 1: Checking agent wallet...\n");
     const wallet = await getOrCreateAgentWallet();
     const balance = await getAgentBalance();
-    result.walletBalance = {
+    result.walletBalances.solana = {
       sol: balance.balanceSOL,
       usdc: balance.balanceUSDC,
     };
@@ -322,7 +345,8 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
             decision: "TIP",
             reason: aiResponse.reason,
             amount: AGENT_CONFIG.TIP_AMOUNT_USDC,
-            signature: tipResult.signature,
+            chains: ["solana"],
+            signatures: [{ chain: "solana", signature: tipResult.signature || "unknown" }],
           });
 
           tipsCreated++;
