@@ -2,10 +2,10 @@
 
 **The platform where crypto content creators get tipped by humans AND autonomous AI agents.**
 
-BlinkTip makes it easy for crypto creators on Twitter to receive USDC tips via Solana Blinks, while an autonomous AI agent evaluates and rewards creators based on their influence and authenticity.
+BlinkTip makes it easy for crypto creators on Twitter to receive tips via Solana Blinks and Celo, while an autonomous AI agent evaluates and rewards creators based on their influence and authenticity.
 
 ![Platform](https://img.shields.io/badge/Platform-Next.js_15-black)
-![Blockchain](https://img.shields.io/badge/Blockchain-Solana-purple)
+![Blockchain](https://img.shields.io/badge/Blockchain-Solana%20%7C%20Celo-purple)
 ![Protocol](https://img.shields.io/badge/Protocol-x402-blue)
 ![AI](https://img.shields.io/badge/AI-Claude_Sonnet_4-orange)
 
@@ -45,10 +45,10 @@ There's no single, universal tip link that works EVERYWHERE and accepts payments
 
 ### One Link, Everywhere
 
-1. **Creator signs up** with their Solana wallet
+1. **Creator signs up** with their Solana and/or Celo wallet
 2. **Gets ONE universal tip link**: `blink-tip.vercel.app/tip/nellycyberpro`
 3. **Shares it EVERYWHERE**: Instagram bio, TikTok bio, Twitter profile, Farcaster, Medium articles, email signature, anywhere
-4. **Anyone can tip** - humans and AI agents alike
+4. **Anyone can tip** - humans and AI agents alike, on Solana or Celo
 
 ### How It Works on Different Platforms
 
@@ -65,13 +65,18 @@ https://blink-tip.vercel.app/tip/nellycyberpro
 
 When someone clicks your tip link from Instagram, TikTok, Medium, or anywhere else:
 
-1. Click tip link → Browser sends GET request
-2. Server returns `402 Payment Required` with payment instructions
-3. User creates Solana transaction via x402 client
-4. Transaction signed → Submitted with `X-PAYMENT` header
-5. Payment verified on-chain → Tip complete
+1. Click tip link → Choose blockchain (Solana or Celo)
+2. Browser sends GET request
+3. Server returns `402 Payment Required` with payment instructions
+4. User creates transaction (Solana or EVM) via x402 client
+5. Transaction signed → Submitted with `X-PAYMENT` header
+6. Payment verified on-chain → Tip complete
 
-**The game-changer:** AI agents can autonomously use the same x402 flow. An AI agent crawling the web can find your helpful Medium article, see your tip link, and autonomously send a tip via x402 without ANY human intervention.
+**Multi-Chain Support:**
+- **Solana**: USDC, Phantom CASH (working with x402)
+- **Celo**: cUSD, USDC (ERC-2612 Permit / ERC-3009 TransferWithAuthorization)
+
+**The game-changer:** AI agents can autonomously use the same x402 flow. An AI agent crawling the web can find your helpful Medium article, see your tip link, and autonomously send a tip via x402 on either blockchain without ANY human intervention.
 
 ### Autonomous AI Agent
 
@@ -94,6 +99,7 @@ This demonstrates how ANY autonomous agent can discover and reward creators usin
 1. **Sign up** at `blink-tip.vercel.app/register`
    - Connect Twitter via OAuth 2.0
    - Connect your Solana wallet
+   - Optionally connect your Celo wallet for EVM chain support
 
 2. **Get your universal tip link**: `blink-tip.vercel.app/tip/yourhandle`
 
@@ -105,9 +111,11 @@ This demonstrates how ANY autonomous agent can discover and reward creators usin
    - Email signature: Include your tip link
    - Personal website: Link from any page
 
-4. **Receive tips** in USDC or Phantom CASH directly to your Solana wallet from:
-   - Humans on any platform (they choose the token)
+4. **Receive tips** directly to your wallet from:
+   - Humans on any platform (they choose blockchain and token)
    - Autonomous AI agents discovering your content
+   - **Solana**: USDC, Phantom CASH
+   - **Celo**: cUSD, USDC
 
 ### For Human Supporters
 
@@ -119,10 +127,12 @@ This demonstrates how ANY autonomous agent can discover and reward creators usin
 
 **On Any Other Platform:**
 - Click creator's tip link from Instagram, TikTok, etc.
-- Choose tip amount
-- **Choose token: USDC or Phantom CASH** 👻
+- **Choose blockchain: Solana or Celo**
+- Choose tip amount and token:
+  - **Solana**: USDC or Phantom CASH 👻
+  - **Celo**: cUSD or USDC
 - Browser creates x402 payment transaction
-- Sign with your wallet
+- Sign with your wallet (gasless on Celo via Permit/Authorization)
 - Payment verified on-chain
 - Creator receives tip
 
@@ -175,15 +185,23 @@ Our platform demonstrates this with a Claude Sonnet 4-powered agent:
 - Support custom tip amounts
 - Powered by x402 protocol
 
-### Multi-Token Support 👻💵
+### Multi-Chain & Multi-Token Support
+
+**Solana**
 - **USDC**: Circle's USD stablecoin (standard)
 - **Phantom CASH**: New USD stablecoin by Phantom/Bridge/Stripe
   - Launched Sept 2025
   - 1:1 USD-pegged
   - Gasless swaps in Phantom wallet
   - Perfect for Phantom wallet users
-- Supporters choose their preferred token when tipping
-- Both tokens work seamlessly with x402 protocol
+
+**Celo**
+- **cUSD**: Celo Dollar (native stablecoin, 18 decimals)
+- **USDC**: Circle's USDC on Celo (6 decimals)
+- **Gasless transfers** via ERC-2612 Permit & ERC-3009 TransferWithAuthorization
+- **Mobile-first** blockchain optimized for micropayments
+
+Supporters choose their preferred blockchain and token when tipping. All tokens work seamlessly with x402 protocol.
 
 ---
 
@@ -193,18 +211,23 @@ Our platform demonstrates this with a Claude Sonnet 4-powered agent:
 - **Framework**: Next.js 15 (App Router)
 - **UI**: React 19, Tailwind CSS
 - **Auth**: NextAuth.js with Twitter OAuth 2.0
-- **Wallet**: Solana Wallet Adapter
+- **Wallets**: Solana Wallet Adapter, thirdweb React SDK (EVM)
 
 ### Backend
 - **API**: Next.js API routes
 - **Database**: Supabase (PostgreSQL)
-- **Payments**: x402 protocol on Solana
+- **Payments**: x402 protocol on Solana & Celo
 - **Agent Wallet**: Coinbase Developer Platform (CDP) SDK
 
 ### Blockchain
-- **Network**: Solana (Devnet for testing, Mainnet ready)
-- **Tokens**: USDC & Phantom CASH (SPL stablecoins)
+- **Networks**:
+  - Solana (Devnet for testing, Mainnet ready)
+  - Celo Sepolia (Testnet)
+- **Tokens**:
+  - Solana: USDC & Phantom CASH (SPL stablecoins)
+  - Celo: cUSD & USDC (ERC-20 stablecoins)
 - **Payment Protocol**: x402 with facilitator verification
+- **Gasless Payments**: ERC-2612 Permit & ERC-3009 TransferWithAuthorization on Celo
 
 ### AI Agent
 - **Model**: Claude Sonnet 4 (via OpenRouter)
@@ -218,11 +241,12 @@ Our platform demonstrates this with a Claude Sonnet 4-powered agent:
 ### Prerequisites
 
 - Node.js 18+
-- pnpm (or npm/yarn)
+- pnpm
 - Coinbase Developer Platform account (for agent wallet)
 - OpenRouter API key (for AI agent)
 - Kaito API key (for influence scores)
 - Twitter Developer account (for OAuth)
+- thirdweb API key (for Celo x402 support)
 
 ### Installation
 
@@ -268,6 +292,11 @@ NEXT_PUBLIC_NETWORK=solana-devnet
 # x402 Protocol
 NEXT_PUBLIC_FACILITATOR_URL=https://facilitator.payai.network
 
+# Celo & thirdweb
+NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your-thirdweb-client-id
+THIRDWEB_SECRET_KEY=your-thirdweb-secret-key
+THIRDWEB_SERVER_WALLET=your-server-wallet-address
+
 # CDP Agent Wallet
 CDP_API_KEY_NAME=your-cdp-api-key
 CDP_API_KEY_PRIVATE_KEY=your-cdp-private-key
@@ -284,11 +313,15 @@ NEXT_PUBLIC_BASE_URL=http://localhost:3000
 Run the Supabase migrations:
 
 ```sql
--- See supabase/migrations/ for full schema
+-- See database/migrations/ for full schema
 -- Key tables:
--- - creators (user profiles)
--- - tips (all tips, human + agent)
+-- - creators (user profiles with multi-chain wallet support)
+-- - tips (all tips, human + agent, multi-chain)
 -- - agent_actions (agent decision log)
+
+-- Run migrations:
+-- 1. Initial schema: database/migrations/initial_schema.sql
+-- 2. Celo support: database/migrations/add_celo_support.sql
 ```
 
 ---
@@ -326,16 +359,18 @@ BlinkTip/
 ├── app/                                    # Next.js App Router
 │   ├── page.tsx                           # Homepage
 │   ├── register/                          # Creator registration flow
-│   │   └── page.tsx                       # Twitter OAuth + wallet connection
-│   ├── tip/[slug]/                        # Tipping pages (Solana Blinks)
-│   │   └── page.tsx                       # x402-powered tipping UI
+│   │   └── page.tsx                       # Twitter OAuth + multi-chain wallet connection
+│   ├── tip/[slug]/                        # Tipping pages (Multi-chain)
+│   │   └── page.tsx                       # x402-powered tipping UI (Solana + Celo)
 │   ├── creators/                          # Public creator profiles
 │   └── api/                               # API routes
 │       ├── auth/[...nextauth]/            # NextAuth Twitter OAuth
-│       ├── creators/                      # Creator CRUD operations
-│       ├── tips/                          # Tip recording
+│       ├── creators/                      # Creator CRUD operations (multi-chain)
+│       ├── tips/                          # Tip recording (multi-chain)
 │       ├── x402/                          # x402 payment endpoints
-│       │   └── tip/[slug]/pay-solana/     # Solana payment handler
+│       │   └── tip/[slug]/
+│       │       ├── pay-solana/            # Solana payment handler
+│       │       └── pay-celo/              # Celo payment handler (ERC-2612/3009)
 │       └── agent/                         # Agent API routes
 │           ├── run/                       # Trigger agent run
 │           ├── wallet/                    # Agent wallet info
@@ -344,15 +379,24 @@ BlinkTip/
 │
 ├── agent/                                  # Autonomous AI Agent
 │   ├── lib/
-│   │   ├── agent.ts                       # Main agent orchestration
+│   │   ├── agent.ts                       # Main agent orchestration (multi-chain)
 │   │   └── services/
-│   │       ├── cdp-wallet.ts              # CDP wallet management
-│   │       ├── cdp-tipper.ts              # Production tipping (WORKING)
-│   │       ├── x402-tipper.ts             # Experimental x402 (not working yet)
+│   │       ├── solana/                    # Solana-specific services
+│   │       │   ├── cdp-wallet.ts          # CDP wallet management
+│   │       │   ├── cdp-tipper.ts          # Production tipping (WORKING)
+│   │       │   └── x402-tipper.ts         # Experimental x402 (not working yet)
+│   │       ├── celo/                      # Celo-specific services
+│   │       │   ├── wallet.ts              # Celo wallet management
+│   │       │   └── tipper.ts              # Celo tipping service
 │   │       ├── kaito.ts                   # Kaito Yaps API
 │   │       ├── openrouter.ts              # AI model integration
 │   │       └── database.ts                # Database operations
 │   └── README.md                          # Agent documentation
+│
+├── database/                              # Database migrations
+│   └── migrations/
+│       ├── initial_schema.sql             # Initial Solana-only schema
+│       └── add_celo_support.sql           # Multi-chain migration
 │
 ├── components/                            # React components
 │   ├── WalletProvider.tsx                # Solana wallet setup
@@ -380,11 +424,17 @@ Register new creator (requires Twitter OAuth)
 
 ### Tipping Endpoints
 
-#### `GET /api/x402/tip/[slug]/pay-solana?amount=0.10`
-Returns 402 with payment requirements for x402 flow
+#### `GET /api/x402/tip/[slug]/pay-solana?amount=0.10&token=USDC`
+Returns 402 with payment requirements for Solana x402 flow
+
+#### `GET /api/x402/tip/[slug]/pay-celo?amount=1&token=cUSD`
+Returns 402 with payment requirements for Celo x402 flow (ERC-2612 Permit or ERC-3009)
 
 #### `POST /api/x402/tip/[slug]/pay-solana`
-Verifies payment and records tip (requires X-Payment header)
+Verifies Solana payment and records tip (requires X-PAYMENT header)
+
+#### `POST /api/x402/tip/[slug]/pay-celo`
+Verifies Celo payment and records tip (requires X-PAYMENT header)
 
 ### Agent Endpoints
 
@@ -443,31 +493,44 @@ This runs the agent every 6 hours automatically.
 - [x] Kaito Yaps influence scoring
 - [x] Agent decision transparency
 
-### Phase 2: Enhancement
+### Phase 2: Enhancement (In Progress)
+- [x] Multi-chain support (Celo)
+- [x] ERC-2612 Permit & ERC-3009 TransferWithAuthorization
+- [x] Multi-token support (cUSD, USDC on Celo)
 - [ ] Complete x402 server-side agent integration
+- [ ] Resolve thirdweb facilitator payment routing
 - [ ] Creator dashboard with analytics
 - [ ] Agent tip notifications (Twitter DM)
 - [ ] Dynamic tip amounts based on influence
-- [ ] Multi-token support (other SPL tokens)
 
 ### Phase 3: Scale
-- [ ] Mainnet deployment
+- [ ] Mainnet deployment (Solana & Celo)
 - [ ] Enhanced AI decision-making
 - [ ] Creator reputation scores
 - [ ] Community governance
-- [ ] Multi-chain support (EVM)
+- [ ] Additional EVM chains (Base, Optimism, Arbitrum)
 
 ---
 
 ## Known Issues
 
-### x402 Agent Implementation
+### Celo x402 Payment Routing
+The thirdweb facilitator overrides the `payTo` parameter to route all payments through the server wallet address instead of directly to creators. This causes "invalid signature" errors because the user's Permit/TransferWithAuthorization signature is for the wrong spender.
+
+**Status**: Investigating with thirdweb team on Discord. May need to:
+- Accept server-first architecture and redistribute to creators
+- Build custom x402 implementation without thirdweb facilitator
+- Or revert to direct ERC-20 transfers for Celo
+
+See [CELO_INTEGRATION.md](CELO_INTEGRATION.md) for detailed technical analysis.
+
+### x402 Agent Implementation (Solana)
 The autonomous agent's x402 integration is not working due to a Solana transaction validation error. See [agent/README.md](agent/README.md#x402-protocol-integration-experimental) for details. Currently using direct CDP wallet transfers.
 
 ### Devnet vs Mainnet
-- Currently configured for Solana Devnet
-- Mainnet deployment requires CDP fee payer setup
-- See x402 mainnet documentation for details
+- Solana: Currently configured for Devnet
+- Celo: Currently on Sepolia Testnet
+- Mainnet deployment requires CDP fee payer setup and production wallet configuration
 
 ---
 
@@ -494,11 +557,18 @@ Areas we'd love help with:
 - [x402 Specification](https://x402.org)
 - [x402-solana Package](https://www.npmjs.com/package/x402-solana)
 - [Pay AI Facilitator](https://facilitator.payai.network)
+- [thirdweb x402 Docs](https://portal.thirdweb.com/x402)
 
 ### Solana
 - [Solana Blinks](https://solana.com/blinks)
 - [Solana Explorer](https://explorer.solana.com)
 - [SPL Token Program](https://spl.solana.com/token)
+
+### Celo
+- [Celo Docs](https://docs.celo.org)
+- [Celo Explorer](https://explorer.celo.org)
+- [ERC-2612 Permit](https://eips.ethereum.org/EIPS/eip-2612)
+- [ERC-3009 TransferWithAuthorization](https://eips.ethereum.org/EIPS/eip-3009)
 
 ### AI & Influence
 - [Kaito AI](https://kaito.ai)
