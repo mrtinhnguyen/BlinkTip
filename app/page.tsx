@@ -27,7 +27,7 @@ export default function Home() {
               <h2 className="text-3xl font-bold mb-4 text-green-600 dark:text-green-400">The Solution</h2>
               <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
                 BlinkTip gives you ONE link that works everywhere. Share it on Twitter, Instagram, TikTok, or anywhere else.
-                Humans tip via Solana Blinks. AI agents tip via x402 protocol. No more juggling payment platforms.
+                Humans tip on Solana, Base, and Celo. AI agents tip via x402 protocol. No more juggling payment platforms.
               </p>
               <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-6">
                 <p className="font-mono text-sm md:text-base text-purple-900 dark:text-purple-200">
@@ -45,7 +45,7 @@ export default function Home() {
               <div className="text-4xl mb-4">🔗</div>
               <h3 className="text-xl font-bold mb-3">1. Create Your Link</h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Register with your Solana wallet and choose your custom slug
+                Connect your wallet (email/social or external) and choose your custom slug
               </p>
             </div>
 
@@ -61,7 +61,7 @@ export default function Home() {
               <div className="text-4xl mb-4">💰</div>
               <h3 className="text-xl font-bold mb-3">3. Receive Tips</h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Get USDC tips from humans and autonomous AI agents instantly
+                Get USDC tips on Solana, Base, and Celo from humans and AI agents
               </p>
             </div>
           </div>
@@ -92,9 +92,9 @@ export default function Home() {
             </div>
 
             <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-2 text-orange-900 dark:text-orange-200">Instant Settlement</h3>
+              <h3 className="text-xl font-bold mb-2 text-orange-900 dark:text-orange-200">Multi-Chain Support</h3>
               <p className="text-gray-700 dark:text-gray-300">
-                Tips arrive directly in your wallet instantly via Solana blockchain
+                Accept tips on Solana, Base, and Celo - all from one universal link
               </p>
             </div>
           </div>
@@ -107,7 +107,7 @@ export default function Home() {
               Create your universal tip link in less than 60 seconds
             </p>
             <Link
-              href="/register"
+              href="/register-new"
               className="inline-block px-8 py-4 bg-white text-purple-600 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg"
             >
               Create Your Tip Page
