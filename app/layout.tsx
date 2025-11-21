@@ -4,6 +4,8 @@ import './globals.css'
 import { SolanaWalletProvider } from './providers/SolanaWalletProvider'
 import { ThirdwebProvider } from './providers/ThirdwebProvider'
 import { AuthProvider } from './providers'
+import { ReownProvider } from '@/context/reown'
+import { headers } from 'next/headers'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -20,19 +22,24 @@ export const metadata: Metadata = {
   description: 'Accept tips from humans via Solana Actions and AI agents via x402 protocol. Multi-chain support for Solana and Base.',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const headersObj = await headers()
+  const cookies = headersObj.get('cookie')
+
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AuthProvider>
-          <ThirdwebProvider>
-            <SolanaWalletProvider>{children}</SolanaWalletProvider>
-          </ThirdwebProvider>
-        </AuthProvider>
+        <ReownProvider cookies={cookies}>
+          <AuthProvider>
+            <ThirdwebProvider>
+              <SolanaWalletProvider>{children}</SolanaWalletProvider>
+            </ThirdwebProvider>
+          </AuthProvider>
+        </ReownProvider>
       </body>
     </html>
   )
