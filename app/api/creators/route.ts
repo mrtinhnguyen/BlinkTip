@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       name,
       bio,
       avatar_url,
-      celo_wallet_address,
+      evm_wallet_address,
       supported_chains,
       twitter_id,
       twitter_handle,
@@ -21,9 +21,17 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Validate required fields
-    if (!slug || !wallet_address || !name) {
+    if (!slug || !name) {
       return NextResponse.json(
-        { error: 'Missing required fields: slug, wallet_address, name' },
+        { error: 'Missing required fields: slug, name' },
+        { status: 400 }
+      )
+    }
+
+    // Must have at least one wallet address
+    if (!wallet_address && !evm_wallet_address) {
+      return NextResponse.json(
+        { error: 'At least one wallet address (Solana or EVM) is required' },
         { status: 400 }
       )
     }
@@ -37,10 +45,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if slug or wallet already exists
-    const { data: existing, error: checkError } = await supabase
+    const orConditions = [`slug.eq.${slug}`]
+    if (wallet_address) {
+      orConditions.push(`wallet_address.eq.${wallet_address}`)
+    }
+    if (evm_wallet_address) {
+      orConditions.push(`evm_wallet_address.eq.${evm_wallet_address}`)
+    }
+
+    const { data: existing } = await supabase
       .from('creators')
-      .select('slug, wallet_address')
-      .or(`slug.eq.${slug},wallet_address.eq.${wallet_address}`)
+      .select('slug, wallet_address, evm_wallet_address')
+      .or(orConditions.join(','))
 
     // If there's data returned, check for conflicts
     if (existing && existing.length > 0) {
@@ -51,9 +67,15 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         )
       }
-      if (conflict.wallet_address === wallet_address) {
+      if (wallet_address && conflict.wallet_address === wallet_address) {
         return NextResponse.json(
-          { error: 'Wallet address already registered' },
+          { error: 'Solana wallet address already registered' },
+          { status: 409 }
+        )
+      }
+      if (evm_wallet_address && conflict.evm_wallet_address === evm_wallet_address) {
+        return NextResponse.json(
+          { error: 'EVM wallet address already registered' },
           { status: 409 }
         )
       }
@@ -64,11 +86,11 @@ export async function POST(request: NextRequest) {
       .from('creators')
       .insert({
         slug,
-        wallet_address,
+        wallet_address: wallet_address || null,
         name,
         bio: bio || null,
         avatar_url: avatar_url || null,
-        celo_wallet_address: celo_wallet_address || null,
+        evm_wallet_address: evm_wallet_address || null,
         supported_chains: supported_chains || ['solana'],
         twitter_id: twitter_id || null,
         twitter_handle: twitter_handle || null,
