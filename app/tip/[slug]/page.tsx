@@ -25,8 +25,8 @@ type Creator = {
   name: string
   bio: string
   avatar_url: string
-  wallet_address: string
-  celo_wallet_address?: string
+  wallet_address: string | null
+  evm_wallet_address?: string
   supported_chains?: string[]
 }
 
@@ -127,8 +127,8 @@ export default function TipPage() {
         }
       } else if (selectedChain === 'celo') {
         // Celo tipping via x402 protocol
-        if (!celoAccount || !celoWallet || !creator?.celo_wallet_address) {
-          throw new Error('Please connect your EVM wallet or creator has no Celo address')
+        if (!celoAccount || !celoWallet || !creator?.evm_wallet_address) {
+          throw new Error('Please connect your EVM wallet or creator has no EVM address')
         }
 
         console.log('[x402-Celo] Starting x402 tip flow...', { amount, creator: slug, token: selectedToken })
@@ -237,7 +237,7 @@ export default function TipPage() {
     : null
 
   // Check if creator supports selected chain
-  const creatorSupportsCelo = creator?.celo_wallet_address && creator.celo_wallet_address.length > 0
+  const creatorSupportsEVM = creator?.evm_wallet_address && creator.evm_wallet_address.length > 0
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900">
@@ -270,7 +270,7 @@ export default function TipPage() {
           <div className="p-8">
             <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl">
               <p className="text-sm text-blue-900 dark:text-blue-200">
-                <strong>💡 Multi-Chain Tipping:</strong> Send tips on Solana or Celo. Choose your preferred chain, token, and amount. Your wallet signs the transaction, and it's verified on-chain.
+                <strong>💡 Multi-Chain Tipping:</strong> Send tips on Solana, Base, or Celo. Choose your preferred chain, token, and amount. Your wallet signs the transaction, and it's verified on-chain.
               </p>
             </div>
 
@@ -300,11 +300,11 @@ export default function TipPage() {
                     setSelectedChain('celo')
                     setSelectedToken('cUSD')
                   }}
-                  disabled={!creatorSupportsCelo}
+                  disabled={!creatorSupportsEVM}
                   className={`py-4 px-4 rounded-xl font-bold transition-all transform hover:scale-105 flex items-center justify-center gap-2 ${
                     selectedChain === 'celo'
                       ? 'bg-gradient-to-r from-yellow-500 to-green-500 text-white shadow-lg'
-                      : !creatorSupportsCelo
+                      : !creatorSupportsEVM
                       ? 'bg-gray-200 dark:bg-zinc-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                       : 'bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-gray-200'
                   }`}
@@ -313,9 +313,9 @@ export default function TipPage() {
                   <span>Celo</span>
                 </button>
               </div>
-              {!creatorSupportsCelo && (
+              {!creatorSupportsEVM && (
                 <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                  This creator hasn't added a Celo wallet address yet.
+                  This creator hasn't added an EVM wallet address yet (Base/Celo).
                 </p>
               )}
             </div>
@@ -448,7 +448,7 @@ export default function TipPage() {
             ) : (
               <button
                 onClick={handleTip}
-                disabled={tipping || (selectedChain === 'celo' && !creatorSupportsCelo)}
+                disabled={tipping || (selectedChain === 'celo' && !creatorSupportsEVM)}
                 className={`w-full font-bold py-5 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] text-lg ${
                   selectedChain === 'solana'
                     ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-400 text-white'
