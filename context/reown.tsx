@@ -3,8 +3,8 @@
 import { wagmiAdapter, solanaAdapter, projectId, evmNetworks, solanaNetworks } from '@/config/reown'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createAppKit } from '@reown/appkit/react'
-import { base, solana } from '@reown/appkit/networks'
-import React, { type ReactNode } from 'react'
+import { solana } from '@reown/appkit/networks'
+import { type ReactNode } from 'react'
 import { cookieToInitialState, WagmiProvider, type Config } from 'wagmi'
 
 const queryClient = new QueryClient()
@@ -16,9 +16,8 @@ const metadata = {
   icons: ['https://blink-tip.vercel.app/icon.png']
 }
 
-// Create AppKit instance with Twitter-First authentication
-// This forces Twitter as the identity anchor to prevent wallet fragmentation
-// User's Twitter account creates a stable embedded wallet that works on ALL chains
+// Create AppKit for wallet creation (email, social, external wallets)
+// Twitter verification handled separately via NextAuth for profile data
 if (!projectId) {
   throw new Error('NEXT_PUBLIC_REOWN_PROJECT_ID is not set')
 }
@@ -26,19 +25,19 @@ if (!projectId) {
 createAppKit({
   adapters: [wagmiAdapter, solanaAdapter],
   projectId,
-  networks: [...evmNetworks, ...solanaNetworks], // Support both Solana AND EVM (Base, Celo)
+  networks: [...evmNetworks, ...solanaNetworks] as any, // Combined EVM (Base, Celo) and Solana networks
   defaultNetwork: solana,
   metadata,
   features: {
     analytics: true,
-    email: false, // Disable email to force Twitter login
-    socials: ['x'], // ONLY Twitter/X - creates stable embedded wallet per Twitter account
-    emailShowWallets: false, // Hide wallet list initially - forces social auth first
+    email: true, // Enable email embedded wallets
+    socials: ['google', 'github', 'discord', 'apple'], // Social logins (X handled via NextAuth)
+    emailShowWallets: true,
   },
-  allWallets: 'HIDE', // Hide external wallets initially - Twitter login creates embedded wallet
+  allWallets: 'SHOW',
   themeMode: 'light',
   themeVariables: {
-    '--w3m-accent': '#8B5CF6', // Purple accent matching BlinkTip brand
+    '--w3m-accent': '#8B5CF6',
   }
 })
 
