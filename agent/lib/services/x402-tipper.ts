@@ -1,21 +1,18 @@
 /**
- * x402 Tipping Service for Agent (EXPERIMENTAL)
+ * x402 Tipping Service for Agent
  *
- * STATUS: This implementation failswith a Solana-specific
- * validation error from the x402 facilitator.
+ * Implements autonomous agent tipping via x402 protocol with proper Solana transaction structure.
  *
- * ERROR: "invalid_exact_svm_payload_transaction_instructions_length"
- * - This error is NOT documented in the x402 specification 
- * - Occurs during facilitator.verifyPayment() call
- * ISSUE: The facilitator is rejecting the transaction structure we're building.
- * It appears to be validating the number of compiled instructions and finding
- * a mismatch with what it expects for the Solana "exact" payment scheme.
- 
- * WAITING FOR: Clarification from x402/Pay AI team on correct Solana transaction
- * structure for autonomous agents in Node.js environment.
+ * REQUIRED INSTRUCTIONS (per PayAI team):
+ * 1. ComputeBudgetProgram.setComputeUnitLimit (up to 7000)
+ * 2. ComputeBudgetProgram.setComputeUnitPrice (< 5 lamports)
+ * 3. createTransferCheckedInstruction (SPL token transfer)
  *
- * MEANWHILE: Agent uses direct CDP wallet transfers (see cdp-tipper.ts)
-
+ * PREREQUISITES:
+ * - Merchant's ATA (Associated Token Account) must exist before x402 transaction
+ * - This implementation creates ATA in separate transaction if needed
+ *
+ * Uses FacilitatorClient from x402-solana/server package.
  */
 
 import { FacilitatorClient, type PaymentRequirements } from "x402-solana/server";
@@ -26,15 +23,17 @@ import {
   Transaction,
   TransactionMessage,
   VersionedTransaction,
+  ComputeBudgetProgram,
 } from "@solana/web3.js";
 import {
-  createTransferInstruction,
+  createTransferCheckedInstruction,
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { CdpClient } from "@coinbase/cdp-sdk";
 import { getOrCreateAgentWallet, getAgentBalance } from "./cdp-wallet";
+import { supabase } from "@/lib/supabase";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
@@ -172,16 +171,32 @@ export async function tipCreatorViaX402(
       console.log("[x402 Tipper] ✓ Token account created");
     }
 
-    // Build x402 payment transaction with ONLY the transfer instruction
+    // Build x402 payment transaction with the 3 required instructions
     const instructions = [];
 
-    // Add ONLY transfer instruction (x402 exact scheme requires exactly 1 instruction)
+    // 1. ComputeBudgetProgram.setComputeUnitLimit (up to 7000)
     instructions.push(
-      createTransferInstruction(
+      ComputeBudgetProgram.setComputeUnitLimit({
+        units: 7000,
+      })
+    );
+
+    // 2. ComputeBudgetProgram.setComputeUnitPrice (< 5 lamports)
+    instructions.push(
+      ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 4, // Less than 5 lamports as required
+      })
+    );
+
+    // 3. TransferChecked instruction (SPL token transfer with decimals)
+    instructions.push(
+      createTransferCheckedInstruction(
         fromTokenAccount,
+        usdcMint,
         toTokenAccount,
         fromPubkey,
         tokenAmount,
+        6, // USDC decimals
         [],
         TOKEN_PROGRAM_ID
       )
@@ -256,37 +271,94 @@ export async function tipCreatorViaX402(
 
     console.log(`[x402 Tipper] ✓ Payment settled! TX: ${settleResult.transaction}`);
 
-    // Step 8: POST to endpoint with payment proof
-    console.log(`[x402 Tipper] Notifying platform...`);
-    const finalResponse = await fetch(x402Endpoint, {
-      method: "POST",
-      headers: {
-        "X-Payment": paymentHeader,
-      },
-    });
+    // Step 8: Record tip in database (payment already settled by facilitator)
+    console.log(`[x402 Tipper] Recording tip in database...`);
+    try {
+      // Get creator
+      const { data: creatorData, error: creatorError } = await supabase
+        .from('creators')
+        .select('*')
+        .eq('slug', creatorSlug)
+        .single();
 
-    if (!finalResponse.ok) {
-      const errorData = await finalResponse.json();
-      return {
-        success: false,
-        error: errorData.error || "Endpoint rejected x402 payment",
-      };
+      if (creatorError || !creatorData) {
+        console.log(`[x402 Tipper] ⚠️  Creator not found: ${creatorSlug}`);
+        console.log(`[x402 Tipper] Note: Payment is already on-chain, so this is not critical`);
+      } else {
+        // Verify transaction on-chain
+        let transactionExists = false;
+        try {
+          const tx = await connection.getTransaction(settleResult.transaction, {
+            maxSupportedTransactionVersion: 0,
+          });
+          transactionExists = tx !== null && tx.meta?.err === null;
+        } catch (error) {
+          console.warn('[x402 Tipper] Could not verify transaction on-chain:', error);
+        }
+
+        const agentWalletAddress = '3igN8HVgmkvnNvnjyXPRJftSM6cQHENPzpRwgWGbYHKh'; // Agent's CDP wallet
+
+        // Record tip in database
+        const { data: tip, error: tipError } = await supabase
+          .from('tips')
+          .insert({
+            creator_id: creatorData.id,
+            from_address: agentWalletAddress,
+            amount: amountUSDC,
+            token: 'USDC',
+            signature: settleResult.transaction,
+            source: 'agent',
+            status: transactionExists ? 'confirmed' : 'pending',
+            is_agent_tip: true, // IMPORTANT: Mark as agent tip for stats
+            agent_reasoning: reason,
+            metadata: {
+              network: 'solana-devnet',
+              protocol: 'x402',
+              agent_id: 'blinktip_agent',
+              verified_on_chain: transactionExists,
+            },
+          })
+          .select()
+          .single();
+
+        if (tipError) {
+          console.error('[x402 Tipper] Failed to record tip:', tipError);
+        } else {
+          console.log(`[x402 Tipper] ✓ Tip recorded in database! Tip ID: ${tip.id}`);
+
+          // Record agent decision
+          await supabase.from('agent_actions').insert({
+            twitter_handle: creatorData.twitter_handle,
+            content_url: `https://twitter.com/${creatorData.twitter_handle}`,
+            content_title: creatorData.name,
+            decision: 'TIP', // Use uppercase 'TIP' to match check constraint
+            tip_id: tip.id,
+            reasoning: reason || 'Autonomous tip via x402',
+            yaps_score_7d: null,
+            yaps_score_30d: null,
+            evaluation_score: null,
+            content_source: 'x402',
+            metadata: {
+              agent_id: 'blinktip_agent',
+              network: 'solana-devnet',
+              amount: amountUSDC,
+              signature: settleResult.transaction,
+            },
+          });
+
+          console.log(`[x402 Tipper] ✓ Agent action recorded`);
+        }
+      }
+    } catch (error: unknown) {
+      console.log(`[x402 Tipper] ⚠️  Database recording error:`, error instanceof Error ? error.message : String(error));
+      console.log(`[x402 Tipper] Note: Payment is already on-chain, so this is not critical`);
     }
 
-    const result = await finalResponse.json();
-
-    if (result.success) {
-      console.log(`[x402 Tipper] ✓ Tip recorded on platform!`);
-      return {
-        success: true,
-        signature: result.tip?.transaction || settleResult.transaction,
-        amount: amountUSDC,
-      };
-    }
-
+    // Payment was settled successfully - return success regardless of platform recording
     return {
-      success: false,
-      error: result.error || "Unknown error",
+      success: true,
+      signature: settleResult.transaction,
+      amount: amountUSDC,
     };
   } catch (error: unknown) {
     console.error("[x402 Tipper] Error:", error);

@@ -5,20 +5,42 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { useSession, signIn } from 'next-auth/react'
 import Link from 'next/link'
+import { ConnectButton, useActiveAccount } from "thirdweb/react"
+import { createThirdwebClient, defineChain } from "thirdweb"
+
+// Initialize thirdweb client for frontend
+const thirdwebClient = createThirdwebClient({
+  clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID!,
+})
+
+// Define Celo Sepolia chain
+const celoSepolia = defineChain({
+  id: 11142220,
+  rpc: "https://forno.celo-sepolia.celo-testnet.org",
+})
 
 export default function RegisterPage() {
   const { publicKey } = useWallet()
   const { data: session, status } = useSession()
+  const celoAccount = useActiveAccount()
 
   const [slug, setSlug] = useState('')
   const [name, setName] = useState('')
   const [bio, setBio] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
+  const [celoWalletAddress, setCeloWalletAddress] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [tipLink, setTipLink] = useState('')
   const [blinkUrl, setBlinkUrl] = useState('')
+
+  // Auto-fill Celo wallet address when connected
+  useEffect(() => {
+    if (celoAccount?.address && !celoWalletAddress) {
+      setCeloWalletAddress(celoAccount.address)
+    }
+  }, [celoAccount, celoWalletAddress])
 
   // Auto-fill form with Twitter data when session loads
   useEffect(() => {
@@ -81,6 +103,8 @@ export default function RegisterPage() {
           name,
           bio: bio.trim() || undefined,
           avatar_url: avatarUrl.trim() || undefined,
+          celo_wallet_address: celoWalletAddress.trim() || undefined,
+          supported_chains: celoWalletAddress.trim() ? ['solana', 'celo'] : ['solana'],
           twitter_id: session.user.twitterId,
           twitter_handle: session.user.twitterHandle,
           twitter_name: session.user.twitterName,
@@ -338,6 +362,32 @@ export default function RegisterPage() {
                     {avatarUrl && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-1">
                         Auto-filled from Twitter profile picture
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="border-t-2 border-gray-200 dark:border-zinc-700 pt-6 mt-6">
+                    <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                      <span>🌱</span> Celo Wallet (Optional)
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Add your Celo wallet to receive tips on Celo blockchain (cUSD, USDC)
+                    </p>
+
+                    <div className="flex items-center gap-3 mb-3">
+                      <ConnectButton client={thirdwebClient} chain={celoSepolia} />
+                    </div>
+
+                    <input
+                      type="text"
+                      value={celoWalletAddress}
+                      onChange={(e) => setCeloWalletAddress(e.target.value)}
+                      placeholder="0x... (auto-fills when you connect wallet)"
+                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-all font-mono text-sm"
+                    />
+                    {celoAccount && (
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-2 ml-1">
+                        Connected: {celoAccount.address.slice(0, 6)}...{celoAccount.address.slice(-4)}
                       </p>
                     )}
                   </div>
