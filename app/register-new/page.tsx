@@ -248,32 +248,52 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          {/* Step 1: Sign in with Twitter */}
+          {/* Step 1: Connect Wallet */}
           {!isConnected ? (
             <div className="text-center py-16">
-              <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-8 mb-6">
-                <div className="text-6xl mb-6">𝕏</div>
-                <p className="text-2xl text-gray-800 dark:text-gray-200 mb-4 font-bold">
-                  Sign in with X (Twitter)
+              <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-8 mb-6">
+                <p className="text-xl text-gray-700 dark:text-gray-300 mb-6 font-semibold">
+                  Step 1: Connect Your Wallet
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                  Your Twitter account creates a secure, self-custodial wallet that works on all chains (Solana, Base, Celo).
+                  Choose your preferred option to create or connect a wallet:
                 </p>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mb-6 bg-blue-100 dark:bg-blue-900/30 p-3 rounded">
-                  Same Twitter = Same Wallet Address. No fragmentation!
-                </p>
-                <button
-                  onClick={() => open()}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg font-bold text-lg shadow-lg transition-all inline-flex items-center justify-center gap-3"
-                >
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                  </svg>
-                  Continue with X
-                </button>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
-                  Powered by Reown - Secure, non-custodial authentication
-                </p>
+                <div className="space-y-4">
+                  <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-purple-200 dark:border-purple-700">
+                    <h3 className="font-semibold mb-2 text-lg">Email / Social Login (Recommended)</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Creates a secure self-custodial wallet for all chains (Solana, Base, Celo)
+                    </p>
+                    <button
+                      onClick={() => open()}
+                      className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-bold text-lg shadow-lg transition-all"
+                    >
+                      Continue with Email or Social
+                    </button>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300 dark:border-zinc-700"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white dark:bg-zinc-900 text-gray-500">OR</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-gray-200 dark:border-zinc-700">
+                    <h3 className="font-semibold mb-2 text-lg">External Wallet</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Connect Phantom, MetaMask, or any other wallet
+                    </p>
+                    <button
+                      onClick={() => open()}
+                      className="w-full px-6 py-4 bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 text-gray-900 dark:text-white rounded-lg font-bold text-lg transition-all"
+                    >
+                      Connect Wallet
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
@@ -309,8 +329,8 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Twitter Profile Data Fetching */}
-              {embeddedWalletInfo?.authProvider === 'x' && !session && (
+              {/* Step 2: Twitter Profile Verification */}
+              {!session && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
                   <div className="flex items-start gap-3">
                     <svg className="w-6 h-6 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
@@ -318,10 +338,10 @@ export default function RegisterPage() {
                     </svg>
                     <div className="flex-1">
                       <p className="text-sm text-blue-800 dark:text-blue-200 font-semibold mb-2">
-                        Step 2: Fetch your Twitter profile (username, avatar)
+                        Step 2: Verify Twitter & Claim Your Username
                       </p>
                       <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
-                        This will auto-fill your profile with your Twitter username and display picture
+                        This auto-fills your username, display name, and avatar from your Twitter profile
                       </p>
                       <button
                         type="button"
@@ -331,7 +351,7 @@ export default function RegisterPage() {
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
                         </svg>
-                        Fetch Twitter Profile
+                        Verify Twitter
                       </button>
                     </div>
                   </div>
