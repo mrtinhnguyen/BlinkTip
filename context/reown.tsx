@@ -16,24 +16,29 @@ const metadata = {
   icons: ['https://blink-tip.vercel.app/icon.png']
 }
 
-// Create AppKit instance with BOTH Wagmi (EVM) and Solana adapters
+// Create AppKit instance with Twitter-First authentication
+// This forces Twitter as the identity anchor to prevent wallet fragmentation
+// User's Twitter account creates a stable embedded wallet that works on ALL chains
+if (!projectId) {
+  throw new Error('NEXT_PUBLIC_REOWN_PROJECT_ID is not set')
+}
+
 createAppKit({
   adapters: [wagmiAdapter, solanaAdapter],
   projectId,
-  networks: [...evmNetworks, ...solanaNetworks],
-  defaultNetwork: solana, // Default to Solana since that's your primary chain
+  networks: [...evmNetworks, ...solanaNetworks], // Support both Solana AND EVM (Base, Celo)
+  defaultNetwork: solana,
   metadata,
   features: {
-    analytics: true, // Enable Reown analytics
-    email: true, // Enable email login with embedded wallets
-    socials: ['google', 'x', 'github', 'discord', 'apple'], // Enable social logins
-    emailShowWallets: true, // Show wallet options on first screen
+    analytics: true,
+    email: false, // Disable email to force Twitter login
+    socials: ['x'], // ONLY Twitter/X - creates stable embedded wallet per Twitter account
+    emailShowWallets: false, // Hide wallet list initially - forces social auth first
   },
-  allWallets: 'SHOW', // Show all available wallets
-  themeMode: 'light', // or 'dark' or 'auto'
+  allWallets: 'HIDE', // Hide external wallets initially - Twitter login creates embedded wallet
+  themeMode: 'light',
   themeVariables: {
-    // Customize to match your brand
-    '--w3m-accent': '#8B5CF6', // Purple accent color
+    '--w3m-accent': '#8B5CF6', // Purple accent matching BlinkTip brand
   }
 })
 
