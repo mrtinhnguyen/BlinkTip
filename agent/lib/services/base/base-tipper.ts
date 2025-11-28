@@ -1,22 +1,22 @@
 /**
- * Celo Tipping Service for Agent
+ * Base Tipping Service for Agent
  *
- * Implements autonomous agent tipping on Celo via x402 protocol using thirdweb.
- * Supports USDC (6 decimals) and cUSD (18 decimals) stablecoins.
+ * Implements autonomous agent tipping on Base via x402 protocol using thirdweb.
+ * Supports USDC (6 decimals) stablecoin.
  *
  * This service uses thirdweb's x402 client-side wrapper to pay for API endpoints.
  */
 
-import { getAgentBalanceCelo } from "./thirdweb-wallet";
+import { createThirdwebClient } from "thirdweb";
+import { wrapFetchWithPayment } from "thirdweb/x402";
+import { getAgentBalanceBase, baseChain } from "./base-wallet";
 import { supabase } from "@/lib/supabase";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 const THIRDWEB_SECRET_KEY = process.env.THIRDWEB_SECRET_KEY!;
+const THIRDWEB_SERVER_WALLET = process.env.THIRDWEB_SERVER_WALLET_ADDRESS!;
 
-
-// using thirdweb's server wallet API directly
-
-export interface CeloTipResult {
+export interface BaseTipResult {
   success: boolean;
   signature?: string;
   error?: string;
@@ -25,35 +25,32 @@ export interface CeloTipResult {
 }
 
 /**
- * Tip a creator on Celo via x402 protocol
+ * Tip a creator on Base via x402 protocol
  *
- * thirdweb's wrapFetchWithPayment to handle x402 flow automatically
+ * Uses thirdweb's wrapFetchWithPayment to handle x402 flow automatically
  *
  * @param creatorSlug - Creator's slug
- * @param amountUSDC - Tip amount in USDC/cUSD
- * @param token - Token to use (USDC or cUSD)
+ * @param amountUSDC - Tip amount in USDC
  * @param reason - AI reasoning for tip
  * @returns Tip result with transaction signature
  */
-export async function tipCreatorViaCeloX402(
+export async function tipCreatorViaBaseX402(
   creatorSlug: string,
   amountUSDC: number,
-  token: "USDC" | "cUSD" = "USDC",
   reason: string
-): Promise<CeloTipResult> {
+): Promise<BaseTipResult> {
   try {
-    console.log(`[Celo Tipper] Tipping @${creatorSlug} via Celo x402...`);
-    console.log(`[Celo Tipper] Amount: $${amountUSDC} ${token}`);
-    console.log(`[Celo Tipper] Reason: ${reason}`);
+    console.log(`[Base Tipper] Tipping @${creatorSlug} via Base x402...`);
+    console.log(`[Base Tipper] Amount: $${amountUSDC} USDC`);
+    console.log(`[Base Tipper] Reason: ${reason}`);
 
     // Check agent balance first
-    const balance = await getAgentBalanceCelo();
-    const requiredBalance = token === "USDC" ? balance.balanceUSDC : balance.balanceCUSD;
+    const balance = await getAgentBalanceBase();
 
-    if (requiredBalance < amountUSDC) {
+    if (balance.balanceUSDC < amountUSDC) {
       return {
         success: false,
-        error: `Insufficient ${token}. Have: $${requiredBalance.toFixed(2)}, Need: $${amountUSDC.toFixed(2)}`,
+        error: `Insufficient USDC. Have: $${balance.balanceUSDC.toFixed(2)}, Need: $${amountUSDC.toFixed(2)}`,
       };
     }
 
@@ -68,33 +65,29 @@ export async function tipCreatorViaCeloX402(
 
     const { creator } = await creatorResponse.json();
 
-    if (!creator.celo_wallet_address) {
+    if (!creator.evm_wallet_address) {
       return {
         success: false,
-        error: "Creator does not accept tips on Celo",
+        error: "Creator does not accept tips on Base",
       };
     }
 
     // Construct x402 endpoint URL
-    const x402Endpoint = `${BASE_URL}/api/x402/tip/${creatorSlug}/pay-celo?amount=${amountUSDC}&token=${token}&agent_id=linktip_agent&content_url=https://twitter.com/${creator.twitter_handle}`;
+    const x402Endpoint = `${BASE_URL}/api/x402/tip/${creatorSlug}/pay-base?amount=${amountUSDC}&token=USDC&agent_id=linktip_agent&content_url=https://twitter.com/${creator.twitter_handle}`;
 
-    console.log(`[Celo Tipper] Calling x402 endpoint...`);
-
-    // wrapFetchWithPayment requires a wallet with private key for signing
-    
+    console.log(`[Base Tipper] Calling x402 endpoint...`);
 
     // Use thirdweb's transaction API
     const result = await tipViaThirdwebAPI(
       x402Endpoint,
       creator,
       amountUSDC,
-      token,
       reason
     );
 
     return result;
   } catch (error: unknown) {
-    console.error("[Celo Tipper] Error:", error);
+    console.error("[Base Tipper] Error:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -109,27 +102,23 @@ export async function tipCreatorViaCeloX402(
  */
 async function tipViaThirdwebAPI(
   endpoint: string,
-  creator: { celo_wallet_address: string; twitter_handle: string },
+  creator: any,
   amount: number,
-  token: "USDC" | "cUSD",
   reason: string
-): Promise<CeloTipResult> {
+): Promise<BaseTipResult> {
   try {
-    const THIRDWEB_SERVER_WALLET = process.env.THIRDWEB_SERVER_WALLET_ADDRESS!;
-    const CELO_CHAIN_ID = parseInt(process.env.CELO_CHAIN_ID || "42220"); // 42220 mainnet, 11142220 Sepolia
+    const BASE_CHAIN_ID = process.env.BASE_CHAIN_ID || "8453";
+    const BASE_USDC_TOKEN = process.env.BASE_USDC_TOKEN!;
 
     // Determine token address and decimals
-    const tokenAddress = token === "USDC"
-      ? process.env.CELO_USDC_TOKEN!
-      : process.env.CELO_CUSD_ADDRESS!;
-
-    const decimals = token === "USDC" ? 6 : 18;
+    const tokenAddress = BASE_USDC_TOKEN;
+    const decimals = 6;
     const amountInBaseUnits = (amount * Math.pow(10, decimals)).toString();
 
-    console.log(`[Celo Tipper] Preparing ERC20 transfer...`);
-    console.log(`  Token: ${token} (${tokenAddress})`);
-    console.log(`  Amount: ${amount} ${token} (${amountInBaseUnits} base units)`);
-    console.log(`  To: ${creator.celo_wallet_address}`);
+    console.log(`[Base Tipper] Preparing ERC20 transfer...`);
+    console.log(`  Token: USDC (${tokenAddress})`);
+    console.log(`  Amount: ${amount} USDC (${amountInBaseUnits} base units)`);
+    console.log(`  To: ${creator.evm_wallet_address}`);
 
     // Call thirdweb transaction API to send ERC20 transfer
     const txResponse = await fetch("https://api.thirdweb.com/v1/transactions", {
@@ -139,13 +128,13 @@ async function tipViaThirdwebAPI(
         "x-secret-key": THIRDWEB_SECRET_KEY,
       },
       body: JSON.stringify({
-        chainId: CELO_CHAIN_ID,
+        chainId: BASE_CHAIN_ID,
         from: THIRDWEB_SERVER_WALLET,
         transactions: [
           {
             to: tokenAddress,
             // ERC20 transfer(address to, uint256 amount)
-            data: `0xa9059cbb000000000000000000000000${creator.celo_wallet_address.slice(2)}${BigInt(amountInBaseUnits).toString(16).padStart(64, '0')}`,
+            data: `0xa9059cbb000000000000000000000000${creator.evm_wallet_address.slice(2)}${BigInt(amountInBaseUnits).toString(16).padStart(64, '0')}`,
           },
         ],
       }),
@@ -153,7 +142,7 @@ async function tipViaThirdwebAPI(
 
     if (!txResponse.ok) {
       const errorData = await txResponse.json();
-      console.error("[Celo Tipper] Transaction API error:", errorData);
+      console.error("[Base Tipper] Transaction API error:", errorData);
       return {
         success: false,
         error: `Transaction failed: ${errorData.message || "Unknown error"}`,
@@ -164,26 +153,30 @@ async function tipViaThirdwebAPI(
     const transactionHash = txData.result?.transactionHash || txData.transactionHash;
 
     if (!transactionHash) {
-      console.error("[Celo Tipper] No transaction hash in response:", txData);
+      console.error("[Base Tipper] No transaction hash in response:", txData);
       return {
         success: false,
         error: "No transaction hash returned",
       };
     }
 
-    console.log(`[Celo Tipper] ✓ Transaction sent: ${transactionHash}`);
+    console.log(`[Base Tipper] ✓ Transaction sent: ${transactionHash}`);
 
     // Record tip in database
     try {
       const { data: creatorData, error: creatorError } = await supabase
         .from("creators")
         .select("*")
-        .eq("celo_wallet_address", creator.celo_wallet_address)
+        .eq("evm_wallet_address", creator.evm_wallet_address)
         .single();
 
       if (creatorError || !creatorData) {
-        console.log(`[Celo Tipper] ⚠️ Creator not found in database`);
+        console.log(`[Base Tipper] ⚠️ Creator not found in database`);
       } else {
+        // Determine network name
+        const BASE_CHAIN_ID = parseInt(process.env.BASE_CHAIN_ID || "8453");
+        const networkName = BASE_CHAIN_ID === 8453 ? "base-mainnet" : "base-sepolia";
+
         // Record tip
         const { data: tip, error: tipError } = await supabase
           .from("tips")
@@ -191,16 +184,16 @@ async function tipViaThirdwebAPI(
             creator_id: creatorData.id,
             from_address: THIRDWEB_SERVER_WALLET,
             amount: amount,
-            token: token,
+            token: "USDC",
             signature: transactionHash,
             source: "agent",
             status: "confirmed",
-            chain: "celo",
-            network: CELO_CHAIN_ID === 42220 ? "celo-mainnet" : "celo-sepolia",
+            chain: "base",
+            network: networkName,
             is_agent_tip: true,
             agent_reasoning: reason,
             metadata: {
-              network: CELO_CHAIN_ID === 42220 ? "celo-mainnet" : "celo-sepolia",
+              network: networkName,
               protocol: "thirdweb-direct",
               agent_id: "linktip_agent",
             },
@@ -209,9 +202,9 @@ async function tipViaThirdwebAPI(
           .single();
 
         if (tipError) {
-          console.error("[Celo Tipper] Failed to record tip:", tipError);
+          console.error("[Base Tipper] Failed to record tip:", tipError);
         } else {
-          console.log(`[Celo Tipper] ✓ Tip recorded in database! Tip ID: ${tip.id}`);
+          console.log(`[Base Tipper] ✓ Tip recorded in database! Tip ID: ${tip.id}`);
 
           // Record agent decision
           await supabase.from("agent_actions").insert({
@@ -220,36 +213,36 @@ async function tipViaThirdwebAPI(
             content_title: creatorData.name,
             decision: "tip",
             tip_id: tip.id,
-            reasoning: reason || "Autonomous tip on Celo",
-            chain: "celo",
+            reasoning: reason || "Autonomous tip on Base",
+            chain: "base",
             yaps_score_7d: null,
             yaps_score_30d: null,
             evaluation_score: null,
-            content_source: "celo-direct",
+            content_source: "base-direct",
             metadata: {
               agent_id: "linktip_agent",
-              network: CELO_CHAIN_ID === 42220 ? "celo-mainnet" : "celo-sepolia",
+              network: networkName,
               amount: amount,
-              token: token,
+              token: "USDC",
               signature: transactionHash,
             },
           });
 
-          console.log(`[Celo Tipper] ✓ Agent action recorded`);
+          console.log(`[Base Tipper] ✓ Agent action recorded`);
         }
       }
     } catch (error: unknown) {
-      console.log(`[Celo Tipper] ⚠️ Database recording error:`, error instanceof Error ? error.message : String(error));
+      console.log(`[Base Tipper] ⚠️ Database recording error:`, error instanceof Error ? error.message : String(error));
     }
 
     return {
       success: true,
       signature: transactionHash,
       amount: amount,
-      token: token,
+      token: "USDC",
     };
   } catch (error: unknown) {
-    console.error("[Celo Tipper] tipViaThirdwebAPI error:", error);
+    console.error("[Base Tipper] tipViaThirdwebAPI error:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -258,22 +251,21 @@ async function tipViaThirdwebAPI(
 }
 
 /**
- * Get Celo tipping status
+ * Get Base tipping status
  */
-export async function getCeloTippingStatus(): Promise<{
+export async function getBaseTippingStatus(): Promise<{
   enabled: boolean;
   balance: number;
   currency: string;
 }> {
   try {
-    const balance = await getAgentBalanceCelo();
+    const balance = await getAgentBalanceBase();
     return {
-      enabled: balance.balanceUSDC > 0 || balance.balanceCUSD > 0,
-      balance: Math.max(balance.balanceUSDC, balance.balanceCUSD),
-      currency: balance.balanceUSDC > balance.balanceCUSD ? "USDC" : "cUSD",
+      enabled: balance.balanceUSDC > 0,
+      balance: balance.balanceUSDC,
+      currency: "USDC",
     };
-  } catch (error: unknown) {
-    console.error("[Celo Tipper] getCeloTippingStatus error:", error);
+  } catch (error) {
     return {
       enabled: false,
       balance: 0,
@@ -281,3 +273,4 @@ export async function getCeloTippingStatus(): Promise<{
     };
   }
 }
+

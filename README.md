@@ -1,8 +1,8 @@
-# BlinkTip
+# LinkTip
 
 **The platform where crypto content creators get tipped by humans AND autonomous AI agents.**
 
-BlinkTip makes it easy for crypto creators on Twitter to receive tips via Solana Blinks and Celo, while an autonomous AI agent evaluates and rewards creators based on their influence and authenticity.
+LinkTip makes it easy for crypto creators on Twitter to receive tips via Solana Blinks and Celo, while an autonomous AI agent evaluates and rewards creators based on their influence and authenticity.
 
 ![Platform](https://img.shields.io/badge/Platform-Next.js_15-black)
 ![Blockchain](https://img.shields.io/badge/Blockchain-Solana%20%7C%20Celo-purple)
@@ -41,12 +41,12 @@ There's no single, universal tip link that works EVERYWHERE and accepts payments
 
 ## The Solution
 
-**BlinkTip gives creators ONE universal tip link that works everywhere.**
+**LinkTip gives creators ONE universal tip link that works everywhere.**
 
 ### One Link, Everywhere
 
 1. **Creator signs up** with their Solana and/or Celo wallet
-2. **Gets ONE universal tip link**: `blink-tip.vercel.app/tip/nellycyberpro`
+2. **Gets ONE universal tip link**: `linktip.xyz/tip/nellycyberpro`
 3. **Shares it EVERYWHERE**: Instagram bio, TikTok bio, Twitter profile, Farcaster, Medium articles, email signature, anywhere
 4. **Anyone can tip** - humans and AI agents alike, on Solana or Celo
 
@@ -54,12 +54,12 @@ There's no single, universal tip link that works EVERYWHERE and accepts payments
 
 **On Twitter/X (Solana Blinks)**
 ```
-https://blink-tip.vercel.app/tip/nellycyberpro
+https://linktip.xyz/tip/nellycyberpro
 → Unfurls as an interactive Solana Blink once action is registered
 → Followers click and tip instantly without leaving Twitter
 → Powered by Solana Actions
 ```
-[See it live](https://dial.to/?action=solana-action:https://blink-tip.vercel.app/api/actions/tip/nellycyberpro)
+[See it live](https://dial.to/?action=solana-action:https://linktip.xyz/api/actions/tip/nellycyberpro)
 
 **Everywhere Else (x402 Protocol)**
 
@@ -74,13 +74,14 @@ When someone clicks your tip link from Instagram, TikTok, Medium, or anywhere el
 
 **Multi-Chain Support:**
 - **Solana**: USDC, Phantom CASH (working with x402)
+- **Base**: USDC (ERC-20, x402 protocol)
 - **Celo**: cUSD, USDC (ERC-2612 Permit / ERC-3009 TransferWithAuthorization)
 
 **The game-changer:** AI agents can autonomously use the same x402 flow. An AI agent crawling the web can find your helpful Medium article, see your tip link, and autonomously send a tip via x402 on either blockchain without ANY human intervention.
 
 ### Autonomous AI Agent
 
-BlinkTip includes a Claude Sonnet 4-powered autonomous agent that:
+LinkTip includes a Claude Sonnet 4-powered autonomous agent that:
 
 - **Discovers** registered creators from the platform
 - **Analyzes** their crypto influence (Kaito Yaps API) and social metrics
@@ -96,15 +97,15 @@ This demonstrates how ANY autonomous agent can discover and reward creators usin
 
 ### For Creators
 
-1. **Sign up** at `blink-tip.vercel.app/register`
+1. **Sign up** at `linktip.xyz/register`
    - Connect Twitter via OAuth 2.0
    - Connect your Solana wallet
    - Optionally connect your Celo wallet for EVM chain support
 
-2. **Get your universal tip link**: `blink-tip.vercel.app/tip/yourhandle`
+2. **Get your universal tip link**: `linktip.xyz/tip/yourhandle`
 
 3. **Share it EVERYWHERE**:
-   - Instagram bio: "Tip me: blink-tip.vercel.app/tip/yourhandle"
+   - Instagram bio: "Tip me: linktip.xyz/tip/yourhandle"
    - TikTok bio: Same link
    - Twitter bio: Link unfurls as interactive Blink
    - Medium articles: Add at the end of posts
@@ -115,6 +116,7 @@ This demonstrates how ANY autonomous agent can discover and reward creators usin
    - Humans on any platform (they choose blockchain and token)
    - Autonomous AI agents discovering your content
    - **Solana**: USDC, Phantom CASH
+   - **Base**: USDC
    - **Celo**: cUSD, USDC
 
 ### For Human Supporters
@@ -127,9 +129,10 @@ This demonstrates how ANY autonomous agent can discover and reward creators usin
 
 **On Any Other Platform:**
 - Click creator's tip link from Instagram, TikTok, etc.
-- **Choose blockchain: Solana or Celo**
+- **Choose blockchain: Solana, Base, or Celo**
 - Choose tip amount and token:
   - **Solana**: USDC or Phantom CASH 👻
+  - **Base**: USDC
   - **Celo**: cUSD or USDC
 - Browser creates x402 payment transaction
 - Sign with your wallet (gasless on Celo via Permit/Authorization)
@@ -147,7 +150,7 @@ This demonstrates how ANY autonomous agent can discover and reward creators usin
 5. Agent submits with `X-PAYMENT` header → verified on-chain
 6. Creator receives tip
 
-**BlinkTip's Built-in Agent:**
+**LinkTip's Built-in Agent:**
 
 Our platform demonstrates this with a Claude Sonnet 4-powered agent:
 
@@ -195,6 +198,12 @@ Our platform demonstrates this with a Claude Sonnet 4-powered agent:
   - Gasless swaps in Phantom wallet
   - Perfect for Phantom wallet users
 
+**Base**
+- **USDC**: Circle's USDC on Base (6 decimals)
+- **Low gas fees** on Base L2
+- **Fast transactions** with Ethereum security
+- **Coinbase-backed** Layer 2 network
+
 **Celo**
 - **cUSD**: Celo Dollar (native stablecoin, 18 decimals)
 - **USDC**: Circle's USDC on Celo (6 decimals)
@@ -222,9 +231,11 @@ Supporters choose their preferred blockchain and token when tipping. All tokens 
 ### Blockchain
 - **Networks**:
   - Solana (Devnet for testing, Mainnet ready)
+  - Base (Mainnet & Sepolia testnet)
   - Celo Sepolia (Testnet)
 - **Tokens**:
   - Solana: USDC & Phantom CASH (SPL stablecoins)
+  - Base: USDC (ERC-20 stablecoin)
   - Celo: cUSD & USDC (ERC-20 stablecoins)
 - **Payment Protocol**: x402 with facilitator verification
 - **Gasless Payments**: ERC-2612 Permit & ERC-3009 TransferWithAuthorization on Celo
@@ -252,8 +263,8 @@ Supporters choose their preferred blockchain and token when tipping. All tokens 
 
 ```bash
 # Clone the repository
-git clone https://github.com/wamimi/BlinkTip.git
-cd BlinkTip
+git clone https://github.com/wamimi/LinkTip.git
+cd LinkTip
 
 # Install dependencies
 pnpm install
@@ -286,8 +297,8 @@ NEXTAUTH_SECRET=your-nextauth-secret
 NEXTAUTH_URL=http://localhost:3000
 
 # Solana
-SOLANA_RPC_URL=https://api.devnet.solana.com
-NEXT_PUBLIC_NETWORK=solana-devnet
+SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+NEXT_PUBLIC_NETWORK=solana-mainnet-beta
 
 # x402 Protocol
 NEXT_PUBLIC_FACILITATOR_URL=https://facilitator.payai.network
@@ -296,6 +307,19 @@ NEXT_PUBLIC_FACILITATOR_URL=https://facilitator.payai.network
 NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your-thirdweb-client-id
 THIRDWEB_SECRET_KEY=your-thirdweb-secret-key
 THIRDWEB_SERVER_WALLET=your-server-wallet-address
+
+# Celo Configuration
+CELO_CHAIN_ID=42220
+CELO_RPC_URL=https://forno.celo.org
+CELO_USDC_TOKEN=0x01C5C0122039549AD1493B8220cABEdD739BC44E
+CELO_CUSD_ADDRESS=0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
+
+# Base Configuration
+BASE_CHAIN_ID=8453
+NEXT_PUBLIC_BASE_CHAIN_ID=8453
+BASE_RPC_URL=https://mainnet.base.org
+NEXT_PUBLIC_BASE_RPC_URL=https://mainnet.base.org
+BASE_USDC_TOKEN=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
 
 # CDP Agent Wallet
 CDP_API_KEY_NAME=your-cdp-api-key
@@ -345,7 +369,7 @@ For automated runs, set up a cron job:
 
 ```bash
 # Run every 6 hours
-0 */6 * * * curl -X POST https://blink-tip.vercel.app/api/agent/run
+0 */6 * * * curl -X POST https://linktip.xyz/api/agent/run
 ```
 
 See [agent/README.md](agent/README.md) for detailed agent documentation.
@@ -355,7 +379,7 @@ See [agent/README.md](agent/README.md) for detailed agent documentation.
 ## Project Structure
 
 ```
-BlinkTip/
+LinkTip/
 ├── app/                                    # Next.js App Router
 │   ├── page.tsx                           # Homepage
 │   ├── register/                          # Creator registration flow
@@ -494,7 +518,7 @@ This runs the agent every 6 hours automatically.
 - [x] Agent decision transparency
 
 ### Phase 2: Enhancement (In Progress)
-- [x] Multi-chain support (Celo)
+- [x] Multi-chain support (Celo, Base)
 - [x] ERC-2612 Permit & ERC-3009 TransferWithAuthorization
 - [x] Multi-token support (cUSD, USDC on Celo)
 - [ ] Complete x402 server-side agent integration
@@ -514,15 +538,21 @@ This runs the agent every 6 hours automatically.
 
 ## Known Issues
 
-### Celo x402 Payment Routing
-The thirdweb facilitator overrides the `payTo` parameter to route all payments through the server wallet address instead of directly to creators. This causes "invalid signature" errors because the user's Permit/TransferWithAuthorization signature is for the wrong spender.
+### EVM x402 Payment Routing (Base & Celo)
+The thirdweb facilitator overrides the `payTo` parameter to route all payments through the server wallet address instead of directly to creators.
 
-**Status**: Investigating with thirdweb team on Discord. May need to:
-- Accept server-first architecture and redistribute to creators
-- Build custom x402 implementation without thirdweb facilitator
-- Or revert to direct ERC-20 transfers for Celo
+**Solution Implemented**: Server-first architecture with automatic redistribution
+- Payments are received by server wallet via thirdweb facilitator
+- Server automatically redistributes funds to creator wallet immediately after payment settlement
+- Both transactions (facilitator + redistribution) are tracked in tip metadata
+- If redistribution fails, payment is still received by server wallet (can be manually redistributed later)
 
-See [CELO_INTEGRATION.md](CELO_INTEGRATION.md) for detailed technical analysis.
+**Status**: ✅ Resolved for Base. Celo implementation pending.
+
+**Technical Details**:
+- Facilitator transaction: Payment from user → Server wallet
+- Redistribution transaction: Transfer from Server wallet → Creator wallet
+- Both transaction hashes are stored in tip metadata for transparency
 
 ### x402 Agent Implementation (Solana)
 The autonomous agent's x402 integration is not working due to a Solana transaction validation error. See [agent/README.md](agent/README.md#x402-protocol-integration-experimental) for details. Currently using direct CDP wallet transfers.

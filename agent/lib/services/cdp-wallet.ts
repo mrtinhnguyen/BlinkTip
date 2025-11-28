@@ -1,42 +1,43 @@
 /**
- * CDP Server-Side Wallet Service for Autonomous Agent
+ * Base Chain Wallet Service for Autonomous Agent
  *
  * This service handles:
- * - Creating/loading the agent's Solana wallet via CDP
- * - Checking balance
+ * - Managing the agent's Base wallet via thirdweb
+ * - Checking balance (ETH and USDC)
  * - Sending USDC tips to creators
- * - Signing transactions on Solana
+ * - Signing transactions on Base
  */
 
-import { CdpClient } from "@coinbase/cdp-sdk";
-import {
-  Connection,
-  PublicKey,
-  Transaction,
-  LAMPORTS_PER_SOL,
-} from "@solana/web3.js";
-import {
-  createTransferInstruction,
-  createAssociatedTokenAccountInstruction,
-  getAssociatedTokenAddress,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
+import { createThirdwebClient, defineChain } from "thirdweb";
+import { getRpcClient, eth_getBalance } from "thirdweb/rpc";
 
-// Initialize CDP client
-const cdp = new CdpClient();
+const THIRDWEB_SECRET_KEY = process.env.THIRDWEB_SECRET_KEY!;
+const THIRDWEB_SERVER_WALLET = process.env.THIRDWEB_SERVER_WALLET_ADDRESS!;
+const BASE_CHAIN_ID = parseInt(process.env.BASE_CHAIN_ID || "8453"); // 8453 mainnet, 84532 Sepolia
+const BASE_RPC_URL = process.env.BASE_RPC_URL || "https://mainnet.base.org";
+const BASE_USDC_TOKEN = process.env.BASE_USDC_TOKEN! as `0x${string}`;
 
-// Solana connection
-const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
-const connection = new Connection(SOLANA_RPC_URL, "confirmed");
+// Lazy initialization of thirdweb client to avoid build-time errors
+let thirdwebClient: ReturnType<typeof createThirdwebClient> | null = null;
 
-// USDC Mint on Solana Devnet 
-const USDC_MINT = new PublicKey(
-  "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr" // USDC-Dev from spl-token-faucet.com
-);
+function getThirdwebClient() {
+  if (!thirdwebClient) {
+    thirdwebClient = createThirdwebClient({
+      secretKey: THIRDWEB_SECRET_KEY,
+    });
+  }
+  return thirdwebClient;
+}
+
+// Define Base chain
+const baseChain = defineChain({
+  id: BASE_CHAIN_ID,
+  rpc: BASE_RPC_URL,
+});
 
 export interface AgentWalletInfo {
   address: string;
-  balanceSOL: number;
+  balanceETH: number;
   balanceUSDC: number;
   canTip: boolean;
 }
@@ -51,59 +52,77 @@ export interface TipResult {
 
 export async function getOrCreateAgentWallet() {
   try {
-    const account = await cdp.solana.getOrCreateAccount({ name: "blinktip-agent" });
-    console.log(`[CDP Wallet] Agent wallet: ${account.address}`);
-    return account;
+    // For Base, we use the server wallet address directly
+    // No need to create account like Solana CDP
+    const address = THIRDWEB_SERVER_WALLET;
+    console.log(`[Base Wallet] Agent wallet: ${address}`);
+    return { address };
   } catch (error) {
-    console.error("[CDP Wallet] Error creating/getting agent wallet:", error);
+    console.error("[Base Wallet] Error getting agent wallet:", error);
     throw error;
   }
 }
 
 /**
- * Get agent wallet balance (both SOL and USDC)
+ * Get agent wallet balance (both ETH and USDC)
  */
 export async function getAgentBalance(): Promise<AgentWalletInfo> {
   try {
     const account = await getOrCreateAgentWallet();
-    const pubkey = new PublicKey(account.address);
+    const walletAddress = account.address as `0x${string}`;
 
-    // Get SOL balance
-    const balanceLamports = await connection.getBalance(pubkey);
-    const balanceSOL = balanceLamports / LAMPORTS_PER_SOL;
+    const client = getThirdwebClient();
+    const rpcRequest = getRpcClient({ client, chain: baseChain });
 
-    // Get USDC balance
+    // Get native ETH balance
+    const ethBalance = await eth_getBalance(rpcRequest, {
+      address: walletAddress,
+    });
+    const balanceETH = Number(ethBalance) / 1e18;
+
+    // Get USDC balance via ERC20 balanceOf call
     let balanceUSDC = 0;
     try {
-      const usdcTokenAccount = await getAssociatedTokenAddress(
-        USDC_MINT,
-        pubkey
-      );
-      const tokenAccountInfo = await connection.getTokenAccountBalance(
-        usdcTokenAccount
-      );
-      balanceUSDC = Number(tokenAccountInfo.value.uiAmount || 0);
-    } catch (error) {
-      // Token account doesn't exist yet - that's okay
-      console.log("[CDP Wallet] No USDC token account yet");
+      const usdcResult = await fetch(BASE_RPC_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: "eth_call",
+          params: [
+            {
+              to: BASE_USDC_TOKEN,
+              data: `0x70a08231000000000000000000000000${walletAddress.slice(2).toLowerCase()}`,
+            },
+            "latest",
+          ],
+          id: 1,
+        }),
+      });
+      const usdcData = await usdcResult.json();
+      if (usdcData.result && usdcData.result !== "0x") {
+        balanceUSDC = Number(BigInt(usdcData.result)) / 1e6; // USDC has 6 decimals
+      }
+    } catch {
+      console.log("[Base Wallet] No USDC token balance yet");
     }
 
     return {
       address: account.address,
-      balanceSOL,
+      balanceETH,
       balanceUSDC,
       canTip: balanceUSDC >= 0.01, // Need at least $0.01 USDC
     };
   } catch (error) {
-    console.error("[CDP Wallet] Error getting balance:", error);
+    console.error("[Base Wallet] Error getting balance:", error);
     throw error;
   }
 }
 
 /**
- * Send USDC tip to a creator
+ * Send USDC tip to a creator on Base
  *
- * @param creatorWallet - Creator's Solana wallet address
+ * @param creatorWallet - Creator's EVM wallet address (Base)
  * @param amountUSDC - Amount in USDC (e.g., 0.10 for 10 cents)
  * @param reason - Why the agent is tipping
  */
@@ -114,14 +133,12 @@ export async function sendUSDCTip(
 ): Promise<TipResult> {
   try {
     console.log(
-      `[CDP Wallet] Sending ${amountUSDC} USDC to ${creatorWallet}`
+      `[Base Wallet] Sending ${amountUSDC} USDC to ${creatorWallet}`
     );
-    console.log(`[CDP Wallet] Reason: ${reason}`);
+    console.log(`[Base Wallet] Reason: ${reason}`);
 
     // Get agent account
     const account = await getOrCreateAgentWallet();
-    const fromPubkey = new PublicKey(account.address);
-    const toPubkey = new PublicKey(creatorWallet);
 
     // Check balance
     const walletInfo = await getAgentBalance();
@@ -134,129 +151,100 @@ export async function sendUSDCTip(
       };
     }
 
-    // Get associated token accounts
-    const fromTokenAccount = await getAssociatedTokenAddress(
-      USDC_MINT,
-      fromPubkey
-    );
-    const toTokenAccount = await getAssociatedTokenAddress(
-      USDC_MINT,
-      toPubkey
-    );
-
     // Convert USDC amount to token amount (6 decimals for USDC)
-    const tokenAmount = Math.floor(amountUSDC * 1_000_000);
+    const amountInBaseUnits = (amountUSDC * 1_000_000).toString();
 
-    // Get latest blockhash
-    const { blockhash } = await connection.getLatestBlockhash();
+    // Prepare ERC20 transfer data
+    // Function signature: transfer(address,uint256) = 0xa9059cbb
+    const addressHex = creatorWallet.slice(2).toLowerCase().padStart(64, '0');
+    const amountHex = BigInt(amountInBaseUnits).toString(16).padStart(64, '0');
+    const transferData = `0xa9059cbb${addressHex}${amountHex}`;
 
-    // Create transfer transaction
-    const transaction = new Transaction();
+    // Call thirdweb transaction API to send ERC20 transfer
+    console.log("[Base Wallet] Sending transaction via thirdweb API...");
+    const txResponse = await fetch("https://api.thirdweb.com/v1/transactions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-secret-key": THIRDWEB_SECRET_KEY,
+      },
+      body: JSON.stringify({
+        chainId: BASE_CHAIN_ID.toString(),
+        from: account.address,
+        transactions: [
+          {
+            to: BASE_USDC_TOKEN,
+            data: transferData,
+          },
+        ],
+      }),
+    });
 
-    // Check if recipient token account exists, create if not
-    const toAccountInfo = await connection.getAccountInfo(toTokenAccount);
-    if (!toAccountInfo) {
-      console.log("[CDP Wallet] Creating token account for recipient...");
-      transaction.add(
-        createAssociatedTokenAccountInstruction(
-          fromPubkey, // payer
-          toTokenAccount, // associated token address
-          toPubkey, // owner
-          USDC_MINT // mint
-        )
-      );
+    if (!txResponse.ok) {
+      const errorData = await txResponse.json();
+      console.error("[Base Wallet] Transaction API error:", errorData);
+      return {
+        success: false,
+        error: `Transaction failed: ${errorData.message || "Unknown error"}`,
+      };
     }
 
-    transaction.add(
-      createTransferInstruction(
-        fromTokenAccount,
-        toTokenAccount,
-        fromPubkey,
-        tokenAmount,
-        [],
-        TOKEN_PROGRAM_ID
-      )
-    );
+    const txData = await txResponse.json();
+    const transactionHash = txData.result?.transactionHash || txData.transactionHash;
 
-    transaction.recentBlockhash = blockhash;
-    transaction.feePayer = fromPubkey;
-
-    // Serialize transaction
-    const serializedTx = Buffer.from(
-      transaction.serialize({ requireAllSignatures: false })
-    ).toString("base64");
-
-    // Sign transaction using CDP
-    const { signature: signedTxBase64 } = await cdp.solana.signTransaction({
-      address: account.address,
-      transaction: serializedTx,
-    });
-
-    // Decode signed transaction
-    const decodedSignedTx = Buffer.from(signedTxBase64, "base64");
-
-    // Send transaction
-    console.log("[CDP Wallet] Sending transaction...");
-    const txSignature = await connection.sendRawTransaction(decodedSignedTx);
-
-    // Wait for confirmation
-    console.log("[CDP Wallet] Waiting for confirmation...");
-    const latestBlockhash = await connection.getLatestBlockhash();
-    const confirmation = await connection.confirmTransaction({
-      signature: txSignature,
-      blockhash: latestBlockhash.blockhash,
-      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-    });
-
-    if (confirmation.value.err) {
-      throw new Error(`Transaction failed: ${confirmation.value.err.toString()}`);
+    if (!transactionHash) {
+      return {
+        success: false,
+        error: "No transaction hash returned",
+      };
     }
 
     console.log(
-      `[CDP Wallet] ✓ Tipped $${amountUSDC} USDC to ${creatorWallet}`
+      `[Base Wallet] ✓ Tipped $${amountUSDC} USDC to ${creatorWallet}`
     );
-    console.log(
-      `[CDP Wallet] Transaction: https://explorer.solana.com/tx/${txSignature}?cluster=devnet`
-    );
+    const explorerUrl = BASE_CHAIN_ID === 8453
+      ? `https://basescan.org/tx/${transactionHash}`
+      : `https://sepolia.basescan.org/tx/${transactionHash}`;
+    console.log(`[Base Wallet] Transaction: ${explorerUrl}`);
 
     return {
       success: true,
-      signature: txSignature,
+      signature: transactionHash,
       amount: amountUSDC,
       recipient: creatorWallet,
     };
-  } catch (error: any) {
-    console.error("[CDP Wallet] Tip failed:", error);
+  } catch (error: unknown) {
+    console.error("[Base Wallet] Tip failed:", error);
     return {
       success: false,
-      error: error.message || "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
 
 /**
- * Request SOL from devnet faucet (for gas fees)
+ * Request ETH from Base Sepolia faucet (for gas fees)
+ * Note: For mainnet, you need to fund the wallet manually
  */
 export async function requestDevnetSOL(): Promise<boolean> {
   try {
     const account = await getOrCreateAgentWallet();
 
-    console.log("[CDP Wallet] Requesting SOL from devnet faucet...");
-    const faucetResult = await cdp.solana.requestFaucet({
-      address: account.address,
-      token: "sol",
-    });
+    if (BASE_CHAIN_ID === 8453) {
+      console.log("[Base Wallet] Mainnet detected - cannot use faucet. Please fund wallet manually.");
+      return false;
+    }
 
-    console.log(
-      `[CDP Wallet] Faucet request sent: https://explorer.solana.com/tx/${faucetResult.signature}?cluster=devnet`
-    );
+    console.log("[Base Wallet] Requesting ETH from Base Sepolia faucet...");
+    // Base Sepolia faucet: https://www.coinbase.com/faucets/base-ethereum-goerli-faucet
+    // Or use: https://app.optimism.io/faucet
+    console.log("[Base Wallet] Please use Base Sepolia faucet to fund wallet:");
+    console.log(`[Base Wallet] Address: ${account.address}`);
+    console.log("[Base Wallet] Faucet: https://www.coinbase.com/faucets/base-ethereum-goerli-faucet");
 
-    // Wait a bit for funds to arrive
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-
-    return true;
+    return false; // Faucet requires manual interaction
   } catch (error) {
-    console.error("[CDP Wallet] Faucet request failed:", error);
+    console.error("[Base Wallet] Faucet request failed:", error);
     return false;
   }
 }

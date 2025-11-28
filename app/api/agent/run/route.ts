@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 // GET for easy browser testing
 export async function GET(request: NextRequest) {
   return NextResponse.json({
-    message: "BlinkTip Autonomous Agent",
+    message: "LinkTip Autonomous Agent",
     usage: "Send POST request to /api/agent/run to trigger agent",
     documentation: "See /docs/agent.md for more info",
     timestamp: new Date().toISOString(),

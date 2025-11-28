@@ -1,8 +1,8 @@
 /**
- * BlinkTip Autonomous Tipping Agent - Multi-Chain Edition
+ * LinkTip Autonomous Tipping Agent - Multi-Chain Edition
  *
  * This agent:
- * 1. Discovers verified creators from BlinkTip database
+ * 1. Discovers verified creators from LinkTip database
  * 2. Fetches their Kaito Yaps scores (influence metrics)
  * 3. Uses AI (OpenRouter + Claude) to decide who to tip
  * 4. Sends USDC tips on MULTIPLE chains:
@@ -20,7 +20,6 @@ import {
   getAllVerifiedCreators,
   checkRecentAgentTip,
   logAgentDecision,
-  recordAgentTip,
   getAgentStats,
   type Creator,
 } from "./services/database";
@@ -29,11 +28,9 @@ import {
   analyzeYapsScore,
   type KaitoYapsScore,
 } from "./services/kaito";
-import {
-  getAgentBalance,
-  getOrCreateAgentWallet,
-} from "./services/cdp-wallet";
-import { tipCreatorViaCDP } from "./services/cdp-tipper";
+import { getAgentBalanceBase, getServerWalletAddress } from "./services/base/base-wallet";
+import { tipCreatorViaBaseX402 } from "./services/base/base-tipper";
+import { getSolanaAgentBalance, getOrCreateSolanaWallet } from "./services/solana/solana-wallet";
 import { tipCreatorViaX402 } from "./services/x402-tipper";
 import { getAgentBalanceCelo } from "./services/celo/thirdweb-wallet";
 import { tipCreatorViaCeloX402 } from "./services/celo/celo-tipper";
@@ -52,6 +49,7 @@ export interface AgentRunResult {
   tipsCreated: number;
   solanaTips: number;
   celoTips: number;
+  baseTips: number;
   skipped: number;
   errors: string[];
   decisions: Array<{
@@ -71,6 +69,10 @@ export interface AgentRunResult {
       celo: number;
       usdc: number;
       cusd: number;
+    };
+    base: {
+      eth: number;
+      usdc: number;
     };
   };
   stats: {
@@ -118,7 +120,7 @@ async function aiDecision(
       )
     : null;
 
-  const prompt = `You are an autonomous AI agent that tips crypto creators on BlinkTip, a decentralized tipping platform.
+  const prompt = `You are an autonomous AI agent that tips crypto creators on LinkTip, a decentralized tipping platform.
 
 Your mission: Identify and reward high-quality, influential creators across ALL platforms (Twitter, Instagram, TikTok, YouTube, etc).
 
@@ -201,7 +203,7 @@ Respond ONLY with valid JSON in this exact format:
  * Run the autonomous tipping agent
  */
 export async function runTippingAgent(): Promise<AgentRunResult> {
-  console.log("\n🤖 ===== BlinkTip Autonomous Agent Starting ===== 🤖\n");
+  console.log("\n🤖 ===== LinkTip Autonomous Agent Starting ===== 🤖\n");
 
   const result: AgentRunResult = {
     success: false,
@@ -209,36 +211,75 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
     tipsCreated: 0,
     solanaTips: 0,
     celoTips: 0,
+    baseTips: 0,
     skipped: 0,
     errors: [],
     decisions: [],
     walletBalances: {
       solana: { sol: 0, usdc: 0 },
       celo: { celo: 0, usdc: 0, cusd: 0 },
+      base: { eth: 0, usdc: 0 },
     },
     stats: { totalDecisions: 0, totalTips: 0, totalSkips: 0, totalTippedUSDC: 0 },
   };
 
   try {
-    console.log("📍 Step 1: Checking agent wallet...\n");
-    const wallet = await getOrCreateAgentWallet();
-    const balance = await getAgentBalance();
-    result.walletBalances.solana = {
-      sol: balance.balanceSOL,
-      usdc: balance.balanceUSDC,
+    console.log("📍 Step 1: Checking agent wallets...\n");
+    
+    // Check Base wallet (Priority 1)
+    const baseWalletAddress = getServerWalletAddress();
+    const baseBalance = await getAgentBalanceBase();
+    result.walletBalances.base = {
+      eth: baseBalance.balanceETH,
+      usdc: baseBalance.balanceUSDC,
     };
+    console.log(`Base Wallet: ${baseWalletAddress}`);
+    console.log(`  Balance: ${baseBalance.balanceETH.toFixed(4)} ETH, $${baseBalance.balanceUSDC.toFixed(2)} USDC`);
 
-    console.log(`Wallet Address: ${wallet.address}`);
-    console.log(`Balance: ${balance.balanceSOL.toFixed(4)} SOL, $${balance.balanceUSDC.toFixed(2)} USDC`);
+    // Check Solana wallet (Priority 2)
+    try {
+      const solanaWallet = await getOrCreateSolanaWallet();
+      const solanaBalance = await getSolanaAgentBalance();
+      result.walletBalances.solana = {
+        sol: solanaBalance.balanceSOL,
+        usdc: solanaBalance.balanceUSDC,
+      };
+      console.log(`Solana Wallet: ${solanaWallet.address}`);
+      console.log(`  Balance: ${solanaBalance.balanceSOL.toFixed(4)} SOL, $${solanaBalance.balanceUSDC.toFixed(2)} USDC`);
+    } catch (error) {
+      console.log(`⚠️  Solana wallet check failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
 
-    if (!balance.canTip) {
-      const error = `Insufficient funds. Need at least $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC.`;
+    // Check Celo wallet (Priority 3)
+    try {
+      const celoBalance = await getAgentBalanceCelo();
+      result.walletBalances.celo = {
+        celo: celoBalance.balanceCELO,
+        usdc: celoBalance.balanceUSDC,
+        cusd: celoBalance.balanceCUSD,
+      };
+      console.log(`Celo Wallet: ${celoBalance.address}`);
+      console.log(`  Balance: ${celoBalance.balanceCELO.toFixed(4)} CELO, $${celoBalance.balanceUSDC.toFixed(2)} USDC, $${celoBalance.balanceCUSD.toFixed(2)} cUSD`);
+    } catch (error) {
+      console.log(`⚠️  Celo wallet check failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    // Check if we have sufficient funds on any chain
+    const hasBaseFunds = baseBalance.balanceUSDC >= AGENT_CONFIG.TIP_AMOUNT_USDC;
+    const hasSolanaFunds = result.walletBalances.solana.usdc >= AGENT_CONFIG.TIP_AMOUNT_USDC;
+    const hasCeloFunds = result.walletBalances.celo.usdc >= AGENT_CONFIG.TIP_AMOUNT_USDC || result.walletBalances.celo.cusd >= AGENT_CONFIG.TIP_AMOUNT_USDC;
+
+    if (!hasBaseFunds && !hasSolanaFunds && !hasCeloFunds) {
+      const error = `Insufficient funds on all chains. Need at least $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC on one chain.`;
       console.log(` ${error}\n`);
       result.errors.push(error);
       return result;
     }
 
-    console.log(`✓ Wallet ready. Can send up to ${Math.floor(balance.balanceUSDC / AGENT_CONFIG.TIP_AMOUNT_USDC)} tips.\n`);
+    const availableTips = Math.floor(
+      (baseBalance.balanceUSDC + result.walletBalances.solana.usdc + result.walletBalances.celo.usdc + result.walletBalances.base.usdc) / AGENT_CONFIG.TIP_AMOUNT_USDC
+    );
+    console.log(`✓ Wallets ready. Can send up to ${availableTips} tips across all chains.\n`);
 
     console.log(" Step 2: Fetching verified creators...\n");
     const creators = await getAllVerifiedCreators();
@@ -313,45 +354,97 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
           continue;
         }
 
-        console.log(`\n💰 Sending $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC tip via x402...`);
-        const tipResult = await tipCreatorViaX402(
-          creator.slug,
-          AGENT_CONFIG.TIP_AMOUNT_USDC,
-          aiResponse.reason
-        );
+        // Determine which chains to tip on
+        // Priority order: Base -> Solana -> Celo
+        const hasEVMWallet = !!creator.evmWalletAddress;
+        const hasSolanaWallet = !!creator.walletAddress;
+        const chainsToTip: string[] = [];
+        const signatures: { chain: string; signature: string }[] = [];
 
-        if (tipResult.success) {
-          console.log(`✓ TIP SENT! TX: ${tipResult.signature}`);
-
-          const tipId = await recordAgentTip(
-            creator.id,
+        // Priority 1: Tip on Base if creator has EVM wallet and we have Base funds
+        if (hasEVMWallet && result.walletBalances.base.usdc >= AGENT_CONFIG.TIP_AMOUNT_USDC) {
+          console.log(`\n💰 [Priority 1] Sending $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC tip on Base...`);
+          const baseTipResult = await tipCreatorViaBaseX402(
+            creator.slug,
             AGENT_CONFIG.TIP_AMOUNT_USDC,
-            tipResult.signature!,
             aiResponse.reason
           );
 
+          if (baseTipResult.success) {
+            console.log(`✓ Base TIP SENT! TX: ${baseTipResult.signature}`);
+            chainsToTip.push("base");
+            signatures.push({ chain: "base", signature: baseTipResult.signature || "unknown" });
+            result.baseTips++;
+            tipsCreated++;
+          } else {
+            console.log(`⚠️  Base tip failed: ${baseTipResult.error}`);
+          }
+        }
+
+        // Priority 2: Tip on Solana if creator has Solana wallet and we have Solana funds (and haven't tipped on Base)
+        if (hasSolanaWallet && chainsToTip.length === 0 && result.walletBalances.solana.usdc >= AGENT_CONFIG.TIP_AMOUNT_USDC) {
+          console.log(`\n💰 [Priority 2] Sending $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC tip on Solana...`);
+          const solanaTipResult = await tipCreatorViaX402(
+            creator.slug,
+            AGENT_CONFIG.TIP_AMOUNT_USDC,
+            aiResponse.reason
+          );
+
+          if (solanaTipResult.success) {
+            console.log(`✓ Solana TIP SENT! TX: ${solanaTipResult.signature}`);
+            chainsToTip.push("solana");
+            signatures.push({ chain: "solana", signature: solanaTipResult.signature || "unknown" });
+            result.solanaTips++;
+            tipsCreated++;
+          } else {
+            console.log(`⚠️  Solana tip failed: ${solanaTipResult.error}`);
+          }
+        }
+
+        // Priority 3: Tip on Celo if creator has EVM wallet and we have Celo funds (and haven't tipped on Base or Solana)
+        if (hasEVMWallet && chainsToTip.length === 0 && 
+            (result.walletBalances.celo.usdc >= AGENT_CONFIG.TIP_AMOUNT_USDC || 
+             result.walletBalances.celo.cusd >= AGENT_CONFIG.TIP_AMOUNT_USDC)) {
+          console.log(`\n💰 [Priority 3] Sending $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC tip on Celo...`);
+          const celoTipResult = await tipCreatorViaCeloX402(
+            creator.slug,
+            AGENT_CONFIG.TIP_AMOUNT_USDC,
+            "USDC",
+            aiResponse.reason
+          );
+
+          if (celoTipResult.success) {
+            console.log(`✓ Celo TIP SENT! TX: ${celoTipResult.signature}`);
+            chainsToTip.push("celo");
+            signatures.push({ chain: "celo", signature: celoTipResult.signature || "unknown" });
+            result.celoTips++;
+            tipsCreated++;
+          } else {
+            console.log(`⚠️  Celo tip failed: ${celoTipResult.error}`);
+          }
+        }
+
+        // Record decision if at least one tip succeeded
+        if (chainsToTip.length > 0) {
           await logAgentDecision({
             twitterHandle: creator.twitterHandle,
             decision: "TIP",
             reason: aiResponse.reason,
             yapsScore7d: yapsScore?.yaps7d,
             yapsScore30d: yapsScore?.yaps30d,
-            amountUSDC: AGENT_CONFIG.TIP_AMOUNT_USDC,
-            tipId: tipId || undefined,
+            amountUSDC: AGENT_CONFIG.TIP_AMOUNT_USDC * chainsToTip.length,
           });
 
           result.decisions.push({
             creator: creator.twitterHandle,
             decision: "TIP",
             reason: aiResponse.reason,
-            amount: AGENT_CONFIG.TIP_AMOUNT_USDC,
-            chains: ["solana"],
-            signatures: [{ chain: "solana", signature: tipResult.signature || "unknown" }],
+            amount: AGENT_CONFIG.TIP_AMOUNT_USDC * chainsToTip.length,
+            chains: chainsToTip,
+            signatures: signatures,
           });
-
-          tipsCreated++;
         } else {
-          const error = `Failed to tip @${creator.twitterHandle}: ${tipResult.error}`;
+          const error = `Failed to tip @${creator.twitterHandle} on any chain`;
           console.log(` ${error}`);
           result.errors.push(error);
         }
@@ -375,6 +468,8 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
     console.log("\n ===== Agent Run Complete ===== \n");
     console.log(`Creators Analyzed: ${result.creatorsAnalyzed}`);
     console.log(`Tips Created: ${result.tipsCreated}`);
+    console.log(`  - Base: ${result.baseTips}`);
+    console.log(`  - Celo: ${result.celoTips}`);
     console.log(`Skipped: ${result.skipped}`);
     console.log(`Errors: ${result.errors.length}`);
     console.log(`\nAll-Time Stats:`);

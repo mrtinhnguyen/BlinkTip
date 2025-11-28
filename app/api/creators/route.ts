@@ -69,13 +69,23 @@ export async function POST(request: NextRequest) {
       }
       if (wallet_address && conflict.wallet_address === wallet_address) {
         return NextResponse.json(
-          { error: 'Solana wallet address already registered' },
+          { 
+            error: 'Solana wallet address already registered',
+            existingCreator: {
+              slug: conflict.slug,
+            }
+          },
           { status: 409 }
         )
       }
       if (evm_wallet_address && conflict.evm_wallet_address === evm_wallet_address) {
         return NextResponse.json(
-          { error: 'EVM wallet address already registered' },
+          { 
+            error: 'EVM wallet address already registered',
+            existingCreator: {
+              slug: conflict.slug,
+            }
+          },
           { status: 409 }
         )
       }

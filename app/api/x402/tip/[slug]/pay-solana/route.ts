@@ -3,8 +3,15 @@ import { X402PaymentHandler } from 'x402-solana/server'
 import { supabase } from '@/lib/supabase'
 
 // Token mint addresses
+// Solana Mainnet USDC: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+// Solana Devnet USDC: Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr
+const SOLANA_NETWORK = process.env.NEXT_PUBLIC_NETWORK || 'solana-mainnet-beta';
+const IS_MAINNET = SOLANA_NETWORK === 'solana-mainnet-beta';
+
 const TOKENS = {
-  USDC: 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr', // USDC Devnet
+  USDC: IS_MAINNET 
+    ? 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC Mainnet
+    : 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr', // USDC Devnet
   CASH: 'CASHedBw9NfhsLBXq1WNVfueVznx255j8LLTScto3S6s', // Phantom CASH
 }
 
@@ -29,8 +36,10 @@ export async function GET(
     }
 
     // Create x402 handler with THIS creator's wallet address
+    // x402-solana uses "solana" for mainnet, "solana-devnet" for devnet
+    const networkName = IS_MAINNET ? 'solana' : 'solana-devnet';
     const x402Handler = new X402PaymentHandler({
-      network: 'solana-devnet',
+      network: networkName,
       treasuryAddress: creator.wallet_address, // ✅ Use creator's wallet, not treasury!
       facilitatorUrl: 'https://facilitator.payai.network',
     })
@@ -54,7 +63,7 @@ export async function GET(
           decimals: 6,
         },
       },
-      network: 'solana-devnet',
+      network: networkName,
       config: {
         description: `Tip ${creator.name} with ${token} for quality content`,
         resource: resourceUrl,
@@ -103,7 +112,7 @@ export async function GET(
         source: 'agent',
         status: settleResult.success ? 'confirmed' : 'pending',
         metadata: {
-          network: 'solana-devnet',
+          network: networkName,
           facilitator: 'https://facilitator.payai.network',
           agent_id: agentId,
         },
@@ -124,7 +133,7 @@ export async function GET(
         reasoning: 'x402 payment completed via Solana',
         metadata: {
           agent_id: agentId,
-          network: 'solana-devnet',
+          network: networkName,
           amount: parseFloat(amount),
         },
       })
@@ -139,7 +148,7 @@ export async function GET(
         amount,
         slug: creator.slug,
         transaction: settleResult.transaction,
-        network: 'solana-devnet',
+        network: networkName,
       },
     })
   } catch (error) {

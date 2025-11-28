@@ -1,12 +1,12 @@
-# BlinkTip Autonomous AI Agent
+# LinkTip Autonomous AI Agent
 
 An autonomous AI agent that discovers crypto content creators on Twitter, evaluates their influence and authenticity, and autonomously tips them with USDC on Solana.
 
 ## Overview
 
-The BlinkTip Agent is a **fully autonomous AI agent** powered by Claude Sonnet 4 that:
+The LinkTip Agent is a **fully autonomous AI agent** powered by Claude Sonnet 4 that:
 
-1. **Discovers** registered crypto creators from the BlinkTip platform
+1. **Discovers** registered crypto creators from the LinkTip platform
 2. **Analyzes** their influence using on-chain metrics (Kaito Yaps API) and social signals (Twitter OAuth)
 3. **Decides** whether to tip based on authenticity, engagement, and crypto relevance
 4. **Executes** USDC tips directly from its own Coinbase Developer Platform (CDP) wallet
@@ -18,7 +18,7 @@ The agent operates completely autonomously - it owns its wallet, signs its own t
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    BlinkTip Agent                           │
+│                    LinkTip Agent                           │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐ │
@@ -37,7 +37,7 @@ The agent operates completely autonomously - it owns its wallet, signs its own t
           │                    │
           ▼                    ▼
    ┌─────────────┐      ┌─────────────┐
-   │  BlinkTip   │      │    Kaito    │
+   │  LinkTip   │      │    Kaito    │
    │  Platform   │      │  Yaps API   │
    │   (Next.js) │      │ (Influence) │
    └─────────────┘      └─────────────┘
@@ -52,7 +52,7 @@ The agent operates completely autonomously - it owns its wallet, signs its own t
 ## Core Components
 
 ### 1. Creator Discovery
-- Fetches registered creators from BlinkTip platform API
+- Fetches registered creators from LinkTip platform API
 - Retrieves creator profiles with Twitter handles, wallet addresses, and bios
 - Filters creators who haven't been analyzed recently
 
@@ -378,7 +378,7 @@ The agent provides comprehensive logging and stats:
 ## Example Agent Run
 
 ```
-🤖 ===== BlinkTip Autonomous Agent Starting ===== 🤖
+🤖 ===== LinkTip Autonomous Agent Starting ===== 🤖
 
 📍 Step 1: Checking agent wallet...
 Wallet Address: FsJ7x9K2...

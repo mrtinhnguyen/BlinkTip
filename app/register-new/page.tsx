@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAppKitAccount, useAppKitNetwork, useAppKit } from '@reown/appkit/react'
 import { useSession, signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function RegisterPage() {
@@ -10,6 +11,7 @@ export default function RegisterPage() {
   const { address, isConnected, caipAddress, embeddedWalletInfo } = useAppKitAccount()
   const { caipNetwork } = useAppKitNetwork()
   const { open } = useAppKit()
+  const router = useRouter()
 
   // NextAuth for Twitter profile data (username, display name, avatar)
   const { data: session } = useSession()
@@ -135,6 +137,11 @@ export default function RegisterPage() {
       const data = await response.json()
 
       if (!response.ok) {
+        // If wallet already registered, redirect to dashboard
+        if (response.status === 409 && data.existingCreator?.slug) {
+          router.push('/dashboard')
+          return
+        }
         throw new Error(data.error || 'Failed to register')
       }
 
@@ -157,7 +164,7 @@ export default function RegisterPage() {
             <div className="text-6xl mb-4">🎉</div>
             <h1 className="text-3xl font-bold mb-4">Registration Successful!</h1>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Your BlinkTip creator profile has been created
+              Your LinkTip creator profile has been created
             </p>
 
             <div className="space-y-4 mb-6">
@@ -231,7 +238,7 @@ export default function RegisterPage() {
         {/* Header */}
         <div className="mb-8 flex justify-between items-center">
           <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
-            BlinkTip
+            LinkTip
           </Link>
           {/* Reown AppKit Button */}
           <appkit-button />
@@ -381,7 +388,7 @@ export default function RegisterPage() {
                   Your Slug <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-2 border-2 border-purple-200 dark:border-purple-800">
-                  <span className="text-gray-500 dark:text-gray-400 text-sm px-2">blink-tip.vercel.app/tip/</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm px-2">linktip.xyz/tip/</span>
                   <input
                     type="text"
                     value={slug}

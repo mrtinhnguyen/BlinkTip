@@ -1,4 +1,4 @@
--- BlinkTip Database Schema
+-- LinkTip Database Schema
 -- PostgreSQL/Supabase
 
 -- Enable UUID extension

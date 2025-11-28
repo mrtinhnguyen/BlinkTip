@@ -2,7 +2,7 @@
  * Database Service for Agent
  *
  * Handles:
- * - Querying verified creators from BlinkTip database
+ * - Querying verified creators from LinkTip database
  * - Checking if creator was recently tipped
  * - Logging agent decisions (TIP/SKIP)
  * - Recording tips to database
@@ -20,7 +20,8 @@ export interface Creator {
   twitterVerified: boolean;
   twitterFollowerCount: number;
   twitterCreatedAt: string | null;
-  walletAddress: string;
+  walletAddress: string | null;
+  evmWalletAddress: string | null;
   avatarUrl: string | null;
   createdAt: string;
 }
@@ -70,6 +71,7 @@ export async function getAllVerifiedCreators(): Promise<Creator[]> {
         twitterFollowerCount: row.twitter_follower_count || 0,
         twitterCreatedAt: row.twitter_created_at,
         walletAddress: row.wallet_address,
+        evmWalletAddress: row.evm_wallet_address,
         avatarUrl: row.avatar_url,
         createdAt: row.created_at,
       })) || []
@@ -109,6 +111,7 @@ export async function getCreatorByTwitterHandle(
       twitterFollowerCount: data.twitter_follower_count || 0,
       twitterCreatedAt: data.twitter_created_at,
       walletAddress: data.wallet_address,
+      evmWalletAddress: data.evm_wallet_address,
       avatarUrl: data.avatar_url,
       createdAt: data.created_at,
     };

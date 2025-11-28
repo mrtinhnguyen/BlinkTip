@@ -12,8 +12,8 @@ import { getRpcClient, eth_getBalance, eth_blockNumber } from "thirdweb/rpc";
 
 const THIRDWEB_SECRET_KEY = process.env.THIRDWEB_SECRET_KEY!;
 const THIRDWEB_SERVER_WALLET = process.env.THIRDWEB_SERVER_WALLET_ADDRESS!;
-const CELO_CHAIN_ID = parseInt(process.env.CELO_CHAIN_ID || "11142220");
-const CELO_RPC_URL = process.env.CELO_RPC_URL!;
+const CELO_CHAIN_ID = parseInt(process.env.CELO_CHAIN_ID || "42220"); // 42220 mainnet, 11142220 Sepolia
+const CELO_RPC_URL = process.env.CELO_RPC_URL || "https://forno.celo.org";
 const CELO_USDC_TOKEN = process.env.CELO_USDC_TOKEN!;
 const CELO_CUSD_ADDRESS = process.env.CELO_CUSD_ADDRESS!;
 
@@ -29,8 +29,8 @@ export function getThirdwebClient() {
   return thirdwebClient;
 }
 
-// Define Celo Sepolia chain
-export const celoSepolia = defineChain({
+// Define Celo chain (mainnet or Sepolia)
+export const celoChain = defineChain({
   id: CELO_CHAIN_ID,
   rpc: CELO_RPC_URL,
 });
@@ -60,7 +60,7 @@ export async function getAgentBalanceCelo(): Promise<{
     console.log(`[Celo Wallet] Fetching balances for: ${walletAddress}`);
 
     // Get RPC client for the chain
-    const rpcRequest = getRpcClient({ client, chain: celoSepolia });
+    const rpcRequest = getRpcClient({ client, chain: celoChain });
 
     // Get native CELO balance
     const celoBalance = await eth_getBalance(rpcRequest, {
@@ -76,7 +76,9 @@ export async function getAgentBalanceCelo(): Promise<{
 
     try {
       // Use public RPC for ERC20 balance queries (more reliable)
-      const publicRpc = "https://forno.celo-sepolia.celo-testnet.org";
+      const publicRpc = CELO_CHAIN_ID === 42220 
+        ? "https://forno.celo.org" 
+        : "https://forno.celo-sepolia.celo-testnet.org";
 
       // Query USDC balance (6 decimals)
       const usdcResult = await fetch(publicRpc, {

@@ -33,12 +33,14 @@ export async function GET(
       },
       payment: {
         endpoint: `${baseUrl}/api/x402/tip/${slug}/pay-solana`,
-        network: 'solana-devnet',
+        network: process.env.NEXT_PUBLIC_NETWORK || 'solana-mainnet-beta',
         description: `Tip ${creator.name} via Solana (USDC)`,
         facilitator: 'https://facilitator.payai.network',
         default_amount: '$0.01',
-        token: 'USDC-Dev',
-        token_mint: 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr',
+        token: process.env.NEXT_PUBLIC_NETWORK === 'solana-mainnet-beta' ? 'USDC' : 'USDC-Dev',
+        token_mint: process.env.NEXT_PUBLIC_NETWORK === 'solana-mainnet-beta'
+          ? 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // Mainnet
+          : 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr', // Devnet
       },
     })
   } catch (error) {

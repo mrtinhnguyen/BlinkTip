@@ -14,10 +14,18 @@ const thirdwebClient = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID!,
 })
 
-// Define Celo Sepolia chain
-const celoSepolia = defineChain({
-  id: 11142220,
-  rpc: "https://forno.celo-sepolia.celo-testnet.org",
+// Define Celo chain (mainnet or Sepolia)
+const CELO_CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CELO_CHAIN_ID || "42220"); // 42220 mainnet, 11142220 Sepolia
+const CELO_RPC_URL = process.env.NEXT_PUBLIC_CELO_RPC_URL || "https://forno.celo.org";
+const celoChain = defineChain({
+  id: CELO_CHAIN_ID,
+  rpc: CELO_RPC_URL,
+})
+
+// Define Base chain (mainnet or Sepolia)
+const baseChain = defineChain({
+  id: parseInt(process.env.NEXT_PUBLIC_BASE_CHAIN_ID || "8453"), // 8453 mainnet, 84532 Sepolia
+  rpc: process.env.NEXT_PUBLIC_BASE_RPC_URL || "https://mainnet.base.org",
 })
 
 type Creator = {
@@ -57,7 +65,7 @@ export default function TipPage() {
 
   const [creator, setCreator] = useState<Creator | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selectedChain, setSelectedChain] = useState<'solana' | 'celo'>('solana')
+  const [selectedChain, setSelectedChain] = useState<'solana' | 'celo' | 'base'>('base')
   const [selectedAmount, setSelectedAmount] = useState(0.01)
   const [customAmount, setCustomAmount] = useState('')
   const [selectedToken, setSelectedToken] = useState<string>('USDC')
@@ -192,6 +200,71 @@ export default function TipPage() {
         if (result.transactionHash) {
           setTxSignature(result.transactionHash)
         }
+      } else if (selectedChain === 'base') {
+        // Base tipping via x402 protocol
+        if (!celoAccount || !celoWallet || !creator?.evm_wallet_address) {
+          throw new Error('Please connect your EVM wallet or creator has no EVM address')
+        }
+
+        console.log('[x402-Base] Starting x402 tip flow...', { amount, creator: slug, token: selectedToken })
+
+        // Debug wallet state
+        const walletAccount = celoWallet.getAccount()
+        const walletChain = celoWallet.getChain()
+        console.log('[x402-Base] Wallet account:', walletAccount?.address)
+        console.log('[x402-Base] Wallet chain:', walletChain?.id, walletChain?.name)
+
+        if (!walletAccount || !walletChain) {
+          throw new Error('Wallet not properly connected. Please reconnect your wallet.')
+        }
+
+        // Calculate max payment amount in base units
+        // USDC has 6 decimals on Base
+        const maxPaymentAmount = BigInt(Math.ceil(amount * 1.1 * 1e6)) // 10% buffer for USDC (6 decimals)
+
+        console.log('[x402-Base] Max payment amount:', maxPaymentAmount.toString())
+
+        // Wrap fetch with x402 payment handling
+        const fetchWithPay = wrapFetchWithPayment(
+          fetch,
+          thirdwebClient,
+          celoWallet,
+          maxPaymentAmount
+        )
+
+        console.log('[x402-Base] Making x402 request with auto-payment handling...')
+
+        // Make request - wrapFetchWithPayment handles the 402 flow automatically
+        let response: Response
+        try {
+          response = await fetchWithPay(
+            `/api/x402/tip/${slug}/pay-base?amount=${amount}&token=USDC`,
+            { method: 'GET' }
+          )
+          console.log('[x402-Base] Response status:', response.status)
+        } catch (fetchError) {
+          console.error('[x402-Base] Fetch with payment error:', fetchError)
+          throw new Error(`Payment signing failed: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`)
+        }
+
+        if (!response.ok) {
+          // Clone response before reading body to avoid "body already read" errors
+          const responseClone = response.clone()
+          try {
+            const errorData = await responseClone.json()
+            console.error('[x402-Base] Error response:', errorData)
+            throw new Error(errorData.error || `x402 payment failed with status ${response.status}`)
+          } catch {
+            throw new Error(`x402 payment failed with status ${response.status}`)
+          }
+        }
+
+        const result = await response.json()
+        console.log('[x402-Base] Payment successful:', result)
+
+        if (result.transactionHash) {
+          setTxSignature(result.transactionHash)
+        }
       }
 
       setError(null)
@@ -233,6 +306,8 @@ export default function TipPage() {
       ? `https://explorer.solana.com/tx/${txSignature}?cluster=${
           process.env.NEXT_PUBLIC_NETWORK === 'solana-mainnet-beta' ? 'mainnet' : 'devnet'
         }`
+      : selectedChain === 'base'
+      ? `https://basescan.org/tx/${txSignature}`
       : `https://sepolia.celoscan.io/tx/${txSignature}`
     : null
 
@@ -243,10 +318,15 @@ export default function TipPage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900">
       <div className="max-w-2xl mx-auto p-6">
         <div className="mb-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">BlinkTip</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">LinkTip</h1>
           <div className="flex gap-2">
             {selectedChain === 'solana' && <WalletMultiButton />}
-            {selectedChain === 'celo' && <ConnectButton client={thirdwebClient} chain={celoSepolia} />}
+            {(selectedChain === 'celo' || selectedChain === 'base') && (
+              <ConnectButton 
+                client={thirdwebClient} 
+                chain={selectedChain === 'base' ? baseChain : celoChain} 
+              />
+            )}
           </div>
         </div>
 
@@ -270,7 +350,7 @@ export default function TipPage() {
           <div className="p-8">
             <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl">
               <p className="text-sm text-blue-900 dark:text-blue-200">
-                <strong>💡 Multi-Chain Tipping:</strong> Send tips on Solana, Base, or Celo. Choose your preferred chain, token, and amount. Your wallet signs the transaction, and it's verified on-chain.
+                <strong>💡 Multi-Chain Tipping:</strong> Send tips on Solana, Base, or Celo. Choose your preferred chain, token, and amount. Your wallet signs the transaction, and it&apos;s verified on-chain.
               </p>
             </div>
 
@@ -278,7 +358,7 @@ export default function TipPage() {
               <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">
                 Select Blockchain
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -293,6 +373,24 @@ export default function TipPage() {
                 >
                   <span className="text-2xl">◎</span>
                   <span>Solana</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedChain('base')
+                    setSelectedToken('USDC')
+                  }}
+                  disabled={!creatorSupportsEVM}
+                  className={`py-4 px-4 rounded-xl font-bold transition-all transform hover:scale-105 flex items-center justify-center gap-2 ${
+                    selectedChain === 'base'
+                      ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                      : !creatorSupportsEVM
+                      ? 'bg-gray-200 dark:bg-zinc-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-gray-200'
+                  }`}
+                >
+                  <span className="text-2xl">🔵</span>
+                  <span>Base</span>
                 </button>
                 <button
                   type="button"
@@ -315,7 +413,7 @@ export default function TipPage() {
               </div>
               {!creatorSupportsEVM && (
                 <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                  This creator hasn't added an EVM wallet address yet (Base/Celo).
+                  This creator hasn&apos;t added an EVM wallet address yet (Base/Celo).
                 </p>
               )}
             </div>
@@ -387,6 +485,21 @@ export default function TipPage() {
                     <span>CASH</span>
                   </button>
                 </div>
+              ) : selectedChain === 'base' ? (
+                <div className="grid grid-cols-1 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedToken('USDC')}
+                    className={`py-4 px-4 rounded-xl font-bold transition-all transform hover:scale-105 flex items-center justify-center gap-2 ${
+                      selectedToken === 'USDC'
+                        ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
+                        : 'bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-gray-200'
+                    }`}
+                  >
+                    <span className="text-2xl">💵</span>
+                    <span>USDC</span>
+                  </button>
+                </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -436,28 +549,40 @@ export default function TipPage() {
                   <WalletMultiButton />
                 </div>
               </div>
-            ) : selectedChain === 'celo' && !celoAccount ? (
-              <div className="text-center py-8 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border-2 border-yellow-200 dark:border-yellow-800">
+            ) : (selectedChain === 'base' || selectedChain === 'celo') && !celoAccount ? (
+              <div className={`text-center py-8 rounded-xl border-2 ${
+                selectedChain === 'base'
+                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                  : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+              }`}>
                 <p className="text-gray-700 dark:text-gray-300 font-semibold mb-4">
-                  Connect your EVM wallet (MetaMask, etc.) to send a tip on Celo
+                  Connect your EVM wallet (MetaMask, etc.) to send a tip on {selectedChain === 'base' ? 'Base' : 'Celo'}
                 </p>
                 <div className="flex justify-center">
-                  <ConnectButton client={thirdwebClient} chain={celoSepolia} />
+                  <ConnectButton 
+                    client={thirdwebClient} 
+                    chain={selectedChain === 'base' ? baseChain : celoChain} 
+                  />
                 </div>
               </div>
             ) : (
               <button
                 onClick={handleTip}
-                disabled={tipping || (selectedChain === 'celo' && !creatorSupportsEVM)}
+                disabled={tipping || ((selectedChain === 'celo' || selectedChain === 'base') && !creatorSupportsEVM)}
                 className={`w-full font-bold py-5 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] text-lg ${
                   selectedChain === 'solana'
                     ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-400 text-white'
+                    : selectedChain === 'base'
+                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-gray-400 disabled:to-gray-400 text-white'
                     : 'bg-gradient-to-r from-yellow-500 to-green-500 hover:from-yellow-600 hover:to-green-600 disabled:from-gray-400 disabled:to-gray-400 text-white'
                 }`}
               >
                 {tipping
                   ? 'Processing Payment...'
-                  : `Send $${customAmount || selectedAmount} ${selectedToken} Tip on ${selectedChain === 'solana' ? 'Solana' : 'Celo'}`}
+                  : `Send $${customAmount || selectedAmount} ${selectedToken} Tip on ${
+                      selectedChain === 'solana' ? 'Solana' : 
+                      selectedChain === 'base' ? 'Base' : 'Celo'
+                    }`}
               </button>
             )}
 
@@ -476,6 +601,8 @@ export default function TipPage() {
                 <p className="text-green-700 dark:text-green-400 mb-4">
                   {selectedChain === 'solana'
                     ? 'Your tip was verified and settled on Solana via the x402 protocol. Thank you for supporting this creator!'
+                    : selectedChain === 'base'
+                    ? 'Your tip was verified and settled on Base via the x402 protocol. Thank you for supporting this creator!'
                     : 'Your tip was verified and settled on Celo via the x402 protocol. Thank you for supporting this creator!'}
                 </p>
                 {explorerUrl && (
@@ -486,10 +613,12 @@ export default function TipPage() {
                     className={`inline-block px-4 py-2 font-semibold rounded-lg transition-colors ${
                       selectedChain === 'solana'
                         ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                        : selectedChain === 'base'
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
                         : 'bg-green-600 hover:bg-green-700 text-white'
                     }`}
                   >
-                    View on {selectedChain === 'solana' ? 'Solana' : 'Celo'} Explorer →
+                    View on {selectedChain === 'solana' ? 'Solana' : selectedChain === 'base' ? 'Base' : 'Celo'} Explorer →
                   </a>
                 )}
               </div>

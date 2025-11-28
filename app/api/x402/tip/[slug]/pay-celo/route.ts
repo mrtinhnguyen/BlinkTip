@@ -17,8 +17,8 @@ import { supabase } from "@/lib/supabase";
 // Environment configuration
 const THIRDWEB_SECRET_KEY = process.env.THIRDWEB_SECRET_KEY!;
 const THIRDWEB_SERVER_WALLET = process.env.THIRDWEB_SERVER_WALLET_ADDRESS!;
-const CELO_CHAIN_ID = parseInt(process.env.CELO_CHAIN_ID || "11142220");
-const CELO_RPC_URL = process.env.CELO_RPC_URL!;
+const CELO_CHAIN_ID = parseInt(process.env.CELO_CHAIN_ID || "42220"); // 42220 mainnet, 11142220 Sepolia
+const CELO_RPC_URL = process.env.CELO_RPC_URL || "https://forno.celo.org";
 
 // Token addresses on Celo Sepolia
 const CELO_USDC_TOKEN = process.env.CELO_USDC_TOKEN!; // 6 decimals
@@ -30,8 +30,8 @@ const client = createThirdwebClient({
   secretKey: THIRDWEB_SECRET_KEY,
 });
 
-// Define Celo Sepolia chain
-const celoSepolia = defineChain({
+// Define Celo chain (mainnet or Sepolia)
+const celoChain = defineChain({
   id: CELO_CHAIN_ID,
   rpc: CELO_RPC_URL,
 });
@@ -136,11 +136,11 @@ export async function GET(
         method: "GET",
         paymentData: paymentHeader,
         payTo: creator.celo_wallet_address,
-        network: celoSepolia,
+        network: celoChain,
         price: priceConfig,
         facilitator: thirdwebFacilitator,
         routeConfig: {
-          description: `Tip ${creator.name} (@${creator.slug}) on BlinkTip`,
+          description: `Tip ${creator.name} (@${creator.slug}) on LinkTip`,
           mimeType: "application/json",
           maxTimeoutSeconds: 300,
         },
@@ -173,7 +173,7 @@ export async function GET(
           source: source,
           status: "confirmed",
           chain: "celo",
-          network: "celo-sepolia",
+          network: CELO_CHAIN_ID === 42220 ? "celo-mainnet" : "celo-sepolia",
           is_agent_tip: isAgentTip,
           agent_reasoning: isAgentTip ? "Tipped via Celo x402 protocol" : null,
           metadata: {
@@ -199,7 +199,7 @@ export async function GET(
           amount: amount,
           token: token,
           chain: "celo",
-          network: "celo-sepolia",
+          network: CELO_CHAIN_ID === 42220 ? "celo-mainnet" : "celo-sepolia",
           transactionHash: transactionHash,
           creator: {
             slug: creator.slug,
@@ -223,11 +223,11 @@ export async function GET(
         method: "GET",
         paymentData: null,
         payTo: creator.celo_wallet_address,
-        network: celoSepolia,
+        network: celoChain,
         price: priceConfig,
         facilitator: thirdwebFacilitator,
         routeConfig: {
-          description: `Tip ${creator.name} (@${creator.slug}) on BlinkTip`,
+          description: `Tip ${creator.name} (@${creator.slug}) on LinkTip`,
           mimeType: "application/json",
           maxTimeoutSeconds: 300,
         },
@@ -358,11 +358,11 @@ export async function POST(
       method: "POST",
       paymentData,
       payTo: creator.celo_wallet_address,
-      network: celoSepolia,
+      network: celoChain,
       price: priceConfig,
       facilitator: thirdwebFacilitator,
       routeConfig: {
-        description: `Tip ${creator.name} (@${creator.slug}) on BlinkTip`,
+        description: `Tip ${creator.name} (@${creator.slug}) on LinkTip`,
         mimeType: "application/json",
         maxTimeoutSeconds: 300,
       },
@@ -430,7 +430,7 @@ export async function POST(
       if (isAgentTip) {
         await supabase.from("agent_actions").insert({
           twitter_handle: creator.twitter_handle,
-          content_url: contentUrl || `https://blinktip.com/tip/${creator.slug}`,
+          content_url: contentUrl || `https://linktip.xyz/tip/${creator.slug}`,
           content_title: creator.name,
           decision: "tip",
           tip_id: tip.id,

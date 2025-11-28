@@ -6,7 +6,7 @@ export default function Home() {
       <div className="max-w-6xl mx-auto px-6 py-16">
         <header className="text-center mb-20">
           <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            BlinkTip
+            LinkTip
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
             One universal link. Tips from humans AND AI agents. Everywhere.
@@ -19,19 +19,19 @@ export default function Home() {
               <h2 className="text-3xl font-bold mb-4 text-red-600 dark:text-red-400">The Problem</h2>
               <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
                 Creators juggle fragmented tipping across platforms. PayPal here, Venmo there, Cash App somewhere else.
-                Audiences need to hunt through link-in-bio pages just to send support. Meanwhile, AI agents can't tip at all.
+                Audiences need to hunt through link-in-bio pages just to send support. Meanwhile, AI agents can&apos;t tip at all.
               </p>
             </div>
 
             <div className="border-t dark:border-zinc-700 pt-8">
               <h2 className="text-3xl font-bold mb-4 text-green-600 dark:text-green-400">The Solution</h2>
               <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
-                BlinkTip gives you ONE link that works everywhere. Share it on Twitter, Instagram, TikTok, or anywhere else.
+                LinkTip gives you ONE link that works everywhere. Share it on Twitter, Instagram, TikTok, or anywhere else.
                 Humans tip on Solana, Base, and Celo. AI agents tip via x402 protocol. No more juggling payment platforms.
               </p>
               <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-6">
                 <p className="font-mono text-sm md:text-base text-purple-900 dark:text-purple-200">
-                  blinktip.com/tip/your-name
+                  linktip.xyz/tip/your-name
                 </p>
               </div>
             </div>
@@ -71,9 +71,9 @@ export default function Home() {
           <h2 className="text-3xl font-bold text-center mb-12">Features</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-2 text-blue-900 dark:text-blue-200">Twitter/X Blinks</h3>
+              <h3 className="text-xl font-bold mb-2 text-blue-900 dark:text-blue-200">Twitter/X LinkTip</h3>
               <p className="text-gray-700 dark:text-gray-300">
-                Your link unfurls as an interactive Solana Blink on Twitter, letting followers tip instantly without leaving the app
+                Your link unfurls as an interactive Base or Solana LinkTip on Twitter, letting followers tip instantly without leaving the app
               </p>
             </div>
 

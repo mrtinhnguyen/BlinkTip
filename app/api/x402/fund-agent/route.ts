@@ -16,8 +16,12 @@ import { X402PaymentHandler } from "x402-solana/server";
 
 export const dynamic = "force-dynamic";
 
-// USDC Devnet mint from spl-token-faucet.com
-const USDC_DEVNET_MINT = "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr";
+// USDC mint addresses
+const SOLANA_NETWORK = process.env.NEXT_PUBLIC_NETWORK || 'solana-mainnet-beta';
+const IS_MAINNET = SOLANA_NETWORK === 'solana-mainnet-beta';
+const USDC_MINT = IS_MAINNET
+  ? "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" // Mainnet
+  : "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr"; // Devnet
 
 /**
  * GET - Return agent wallet info
@@ -29,16 +33,18 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: "BlinkTip Autonomous Agent Funding",
+      message: "LinkTip Autonomous Agent Funding",
       wallet: {
         address: wallet.address,
-        network: "solana-devnet",
+        network: IS_MAINNET ? "solana" : "solana-devnet",
         currentBalance: {
-          sol: balance.balanceSOL,
+          eth: balance.balanceETH,
           usdc: balance.balanceUSDC,
         },
         canTip: balance.canTip,
-        explorerUrl: `https://explorer.solana.com/address/${wallet.address}?cluster=devnet`,
+        explorerUrl: IS_MAINNET
+          ? `https://explorer.solana.com/address/${wallet.address}`
+          : `https://explorer.solana.com/address/${wallet.address}?cluster=devnet`,
       },
       fundingInstructions: {
         description:
@@ -85,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     // Create x402 handler with agent wallet address
     const x402Handler = new X402PaymentHandler({
-      network: "solana-devnet",
+      network: IS_MAINNET ? "solana" : "solana-devnet",
       treasuryAddress: wallet.address,
       facilitatorUrl: "https://facilitator.payai.network",
     });
@@ -108,13 +114,13 @@ export async function POST(request: NextRequest) {
       price: {
         amount: amountInMicroUsdc,
         asset: {
-          address: USDC_DEVNET_MINT,
+          address: USDC_MINT,
           decimals: 6,
         },
       },
-      network: "solana-devnet",
+      network: IS_MAINNET ? "solana" : "solana-devnet",
       config: {
-        description: "Fund BlinkTip autonomous tipping agent",
+        description: "Fund LinkTip autonomous tipping agent",
         resource: resourceUrl,
       },
     });
@@ -166,12 +172,12 @@ export async function POST(request: NextRequest) {
         amount: parseFloat(amount),
         token: "USDC",
         transaction: settleResult.transaction,
-        network: "solana-devnet",
+        network: IS_MAINNET ? "solana" : "solana-devnet",
       },
       wallet: {
         address: wallet.address,
         newBalance: {
-          sol: balance.balanceSOL,
+          eth: balance.balanceETH,
           usdc: balance.balanceUSDC,
         },
         explorerUrl: `https://explorer.solana.com/tx/${settleResult.transaction}?cluster=devnet`,

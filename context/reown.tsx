@@ -3,17 +3,17 @@
 import { wagmiAdapter, solanaAdapter, projectId, evmNetworks, solanaNetworks } from '@/config/reown'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createAppKit } from '@reown/appkit/react'
-import { solana } from '@reown/appkit/networks'
+import { base } from '@reown/appkit/networks'
 import { type ReactNode } from 'react'
 import { cookieToInitialState, WagmiProvider, type Config } from 'wagmi'
 
 const queryClient = new QueryClient()
 
 const metadata = {
-  name: 'BlinkTip',
+  name: 'LinkTip',
   description: 'Universal tip link for creators. Get tipped by humans and AI agents.',
-  url: 'https://blink-tip.vercel.app',
-  icons: ['https://blink-tip.vercel.app/icon.png']
+  url: 'https://linktip.xyz',
+  icons: ['https://linktip.xyz/icon.png']
 }
 
 // Create AppKit for wallet creation (email, social, external wallets)
@@ -26,7 +26,7 @@ createAppKit({
   adapters: [wagmiAdapter, solanaAdapter],
   projectId,
   networks: [...evmNetworks, ...solanaNetworks] as any, // Combined EVM (Base, Celo) and Solana networks
-  defaultNetwork: solana,
+  defaultNetwork: base,
   metadata,
   features: {
     analytics: true,

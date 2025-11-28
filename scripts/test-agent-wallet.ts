@@ -1,27 +1,32 @@
 /**
- * Test script for CDP Agent Wallet
+ * Test script for Solana Agent Wallet
  *
  * Tests:
- * - CDP wallet creation
+ * - Solana wallet creation via CDP
  * - Balance checking
  * - Wallet address generation
  */
 
-import { getOrCreateAgentWallet, getAgentBalance, requestDevnetSOL } from "../agent/lib/services/cdp-wallet";
+import { getOrCreateSolanaWallet, getSolanaAgentBalance } from "../agent/lib/services/solana/solana-wallet";
 
 async function main() {
-  console.log("\n Testing CDP Agent Wallet...\n");
+  console.log("\n Testing Solana Agent Wallet...\n");
 
   try {
     // Test 1: Create/Get Wallet
-    console.log("Test 1: Creating/getting agent wallet...");
-    const wallet = await getOrCreateAgentWallet();
+    console.log("Test 1: Creating/getting Solana agent wallet...");
+    const wallet = await getOrCreateSolanaWallet();
     console.log(`✓ Wallet Address: ${wallet.address}`);
-    console.log(`  Explorer: https://explorer.solana.com/address/${wallet.address}?cluster=devnet\n`);
+    const network = process.env.NEXT_PUBLIC_NETWORK || 'solana-mainnet-beta';
+    const isMainnet = network === 'solana-mainnet-beta';
+    const explorerUrl = isMainnet
+      ? `https://explorer.solana.com/address/${wallet.address}`
+      : `https://explorer.solana.com/address/${wallet.address}?cluster=devnet`;
+    console.log(`  Explorer: ${explorerUrl}\n`);
 
     // Test 2: Check Balance
-    console.log("Test 2: Checking wallet balance...");
-    const balance = await getAgentBalance();
+    console.log("Test 2: Checking Solana wallet balance...");
+    const balance = await getSolanaAgentBalance();
     console.log(`✓ SOL Balance: ${balance.balanceSOL.toFixed(4)} SOL`);
     console.log(`✓ USDC Balance: $${balance.balanceUSDC.toFixed(2)} USDC`);
     console.log(`✓ Can Tip: ${balance.canTip ? "Yes" : "No"}`);
@@ -35,13 +40,11 @@ async function main() {
 
     // Test 3: Request SOL (for gas fees)
     if (balance.balanceSOL < 0.1) {
-      console.log("Test 3: Requesting SOL from devnet faucet...");
-      const faucetSuccess = await requestDevnetSOL();
-      if (faucetSuccess) {
-        console.log("✓ SOL faucet request sent\n");
-      } else {
-        console.log(" Faucet request failed\n");
-      }
+      console.log("Test 3: Requesting SOL from faucet...");
+      // Note: Faucet request requires manual interaction or CDP SDK method
+      console.log("  Please fund the wallet manually or use CDP SDK faucet method");
+      console.log("  For devnet: https://faucet.solana.com/");
+      console.log("  For mainnet: Send SOL directly to wallet address\n");
     } else {
       console.log("Test 3: Skipping faucet (sufficient SOL balance)\n");
     }
@@ -57,9 +60,16 @@ async function main() {
 
     if (!balance.canTip) {
       console.log("💡 To fund the agent:");
-      console.log(`   1. Send USDC devnet tokens to: ${wallet.address}`);
+      const network = process.env.NEXT_PUBLIC_NETWORK || 'solana-mainnet-beta';
+      const isMainnet = network === 'solana-mainnet-beta';
+      if (isMainnet) {
+        console.log(`   1. Send USDC mainnet tokens to: ${wallet.address}`);
+      } else {
+        console.log(`   1. Send USDC devnet tokens to: ${wallet.address}`);
+        console.log("      Get devnet USDC from: https://spl-token-faucet.com");
+      }
       console.log("   2. Or use the x402 funding endpoint:");
-      console.log("      POST http://localhost:3000/api/x402/fund-agent?amount=1.0\n");
+      console.log("      POST https://linktip.xyz/api/x402/fund-agent?amount=1.0\n");
     }
 
   } catch (error) {

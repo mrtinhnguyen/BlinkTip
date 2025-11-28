@@ -26,11 +26,13 @@ export async function GET() {
       success: true,
       wallet: {
         address: wallet.address,
-        balanceSOL: balance.balanceSOL,
+        balanceETH: balance.balanceETH,
         balanceUSDC: balance.balanceUSDC,
         canTip: balance.canTip,
         potentialTips: potentialTips,
-        explorerUrl: `https://explorer.solana.com/address/${wallet.address}?cluster=devnet`,
+        explorerUrl: process.env.BASE_CHAIN_ID === "84532"
+          ? `https://sepolia.basescan.org/address/${wallet.address}`
+          : `https://basescan.org/address/${wallet.address}`,
       },
       stats: {
         totalDecisions: stats.totalDecisions,
@@ -44,7 +46,7 @@ export async function GET() {
       },
       fundingInstructions: {
         method1: "Send USDC to agent wallet address via x402 protocol",
-        method2: "Use Solana devnet faucet for testing",
+        method2: "Fund Base wallet directly with USDC",
         endpoint: `${process.env.NEXT_PUBLIC_BASE_URL}/api/x402/fund-agent`,
       },
       timestamp: new Date().toISOString(),

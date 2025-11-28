@@ -6,9 +6,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { Connection, PublicKey } from '@solana/web3.js'
+import { Connection } from '@solana/web3.js'
 
-const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com'
+// Solana configuration - default to mainnet for production
+const SOLANA_NETWORK = process.env.NEXT_PUBLIC_NETWORK || 'solana-mainnet-beta';
+const IS_MAINNET = SOLANA_NETWORK === 'solana-mainnet-beta';
+const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || (IS_MAINNET 
+  ? 'https://api.mainnet-beta.solana.com' 
+  : 'https://api.devnet.solana.com');
 const connection = new Connection(SOLANA_RPC_URL, 'confirmed')
 
 export async function POST(request: NextRequest) {
@@ -65,7 +70,7 @@ export async function POST(request: NextRequest) {
         is_agent_tip: true, // IMPORTANT: Mark as agent tip for stats
         agent_reasoning: reason,
         metadata: {
-          network: 'solana-devnet',
+          network: IS_MAINNET ? 'solana-mainnet-beta' : 'solana-devnet',
           protocol: 'x402',
           agent_id: agentId,
           verified_on_chain: transactionExists,
@@ -97,7 +102,7 @@ export async function POST(request: NextRequest) {
         content_source: 'x402',
         metadata: {
           agent_id: agentId,
-          network: 'solana-devnet',
+          network: IS_MAINNET ? 'solana-mainnet-beta' : 'solana-devnet',
           amount: parseFloat(amount),
           signature: signature,
         },

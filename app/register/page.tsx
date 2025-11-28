@@ -13,10 +13,12 @@ const thirdwebClient = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID!,
 })
 
-// Define Celo Sepolia chain
-const celoSepolia = defineChain({
-  id: 11142220,
-  rpc: "https://forno.celo-sepolia.celo-testnet.org",
+// Define Celo chain (mainnet or Sepolia)
+const CELO_CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CELO_CHAIN_ID || "42220"); // 42220 mainnet, 11142220 Sepolia
+const CELO_RPC_URL = process.env.NEXT_PUBLIC_CELO_RPC_URL || "https://forno.celo.org";
+const celoChain = defineChain({
+  id: CELO_CHAIN_ID,
+  rpc: CELO_RPC_URL,
 })
 
 export default function RegisterPage() {
@@ -138,7 +140,7 @@ export default function RegisterPage() {
             <div className="text-6xl mb-4">🎉</div>
             <h1 className="text-3xl font-bold mb-4">Registration Successful!</h1>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Your BlinkTip creator profile has been created
+              Your LinkTip creator profile has been created
             </p>
 
             <div className="space-y-4 mb-6">
@@ -210,7 +212,7 @@ export default function RegisterPage() {
       <div className="max-w-2xl mx-auto p-6">
         <div className="mb-8 flex justify-between items-center">
           <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
-            BlinkTip
+            LinkTip
           </Link>
           <WalletMultiButton />
         </div>
@@ -306,7 +308,7 @@ export default function RegisterPage() {
                       Your Slug <span className="text-red-500">*</span>
                     </label>
                     <div className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-2 border-2 border-purple-200 dark:border-purple-800">
-                      <span className="text-gray-500 dark:text-gray-400 text-sm px-2">blink-tip.vercel.app/tip/</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-sm px-2">linktip.xyz/tip/</span>
                       <input
                         type="text"
                         value={slug}
@@ -375,7 +377,7 @@ export default function RegisterPage() {
                     </p>
 
                     <div className="flex items-center gap-3 mb-3">
-                      <ConnectButton client={thirdwebClient} chain={celoSepolia} />
+                      <ConnectButton client={thirdwebClient} chain={celoChain} />
                     </div>
 
                     <input

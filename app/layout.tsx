@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'BlinkTip - Universal Micro-Tip Links',
+  title: 'LinkTip - Universal Micro-Tip Links',
   description: 'Accept tips from humans via Solana Actions and AI agents via x402 protocol. Multi-chain support for Solana and Base.',
 }
 

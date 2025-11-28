@@ -32,12 +32,19 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { CdpClient } from "@coinbase/cdp-sdk";
-import { getOrCreateAgentWallet, getAgentBalance } from "./cdp-wallet";
+import { getOrCreateSolanaWallet, getSolanaAgentBalance } from "./solana/solana-wallet";
 import { supabase } from "@/lib/supabase";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
-const USDC_DEVNET_MINT = "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr";
+// Solana configuration - default to mainnet for production
+const SOLANA_NETWORK = process.env.NEXT_PUBLIC_NETWORK || 'solana-mainnet-beta';
+const IS_MAINNET = SOLANA_NETWORK === 'solana-mainnet-beta';
+const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || (IS_MAINNET 
+  ? "https://api.mainnet-beta.solana.com" 
+  : "https://api.devnet.solana.com");
+const USDC_MINT = IS_MAINNET
+  ? "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" // Mainnet
+  : "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr"; // Devnet
 
 // Initialize clients
 const cdp = new CdpClient();
@@ -70,7 +77,7 @@ export async function tipCreatorViaX402(
     console.log(`[x402 Tipper] Reason: ${reason}`);
 
     // Check agent balance first
-    const balance = await getAgentBalance();
+    const balance = await getSolanaAgentBalance();
     if (balance.balanceUSDC < amountUSDC) {
       return {
         success: false,
@@ -88,9 +95,9 @@ export async function tipCreatorViaX402(
     }
 
     const { creator } = await creatorResponse.json();
-    const agentWallet = await getOrCreateAgentWallet();
+    const agentWallet = await getOrCreateSolanaWallet();
 
-    const x402Endpoint = `${BASE_URL}/api/x402/tip/${creatorSlug}/pay-solana?amount=${amountUSDC}&agent_id=blinktip_agent&content_url=https://twitter.com/${creator.twitter_handle}`;
+    const x402Endpoint = `${BASE_URL}/api/x402/tip/${creatorSlug}/pay-solana?amount=${amountUSDC}&agent_id=linktip_agent&content_url=https://twitter.com/${creator.twitter_handle}`;
 
     console.log(`[x402 Tipper] Fetching payment requirements...`);
     const requirementsResponse = await fetch(x402Endpoint, {
@@ -124,7 +131,7 @@ export async function tipCreatorViaX402(
     const fromPubkey = new PublicKey(agentWallet.address);
     const toPubkey = new PublicKey(paymentRequirements.payTo); // Use payTo from requirements
     const feePayerPubkey = new PublicKey(feePayerAddress);
-    const usdcMint = new PublicKey(USDC_DEVNET_MINT);
+    const usdcMint = new PublicKey(USDC_MINT);
 
     const fromTokenAccount = await getAssociatedTokenAddress(usdcMint, fromPubkey);
     const toTokenAccount = await getAssociatedTokenAddress(usdcMint, toPubkey);
@@ -312,9 +319,9 @@ export async function tipCreatorViaX402(
             is_agent_tip: true, // IMPORTANT: Mark as agent tip for stats
             agent_reasoning: reason,
             metadata: {
-              network: 'solana-devnet',
+              network: IS_MAINNET ? 'solana-mainnet-beta' : 'solana-devnet',
               protocol: 'x402',
-              agent_id: 'blinktip_agent',
+              agent_id: 'linktip_agent',
               verified_on_chain: transactionExists,
             },
           })
@@ -339,8 +346,8 @@ export async function tipCreatorViaX402(
             evaluation_score: null,
             content_source: 'x402',
             metadata: {
-              agent_id: 'blinktip_agent',
-              network: 'solana-devnet',
+              agent_id: 'linktip_agent',
+              network: IS_MAINNET ? 'solana-mainnet-beta' : 'solana-devnet',
               amount: amountUSDC,
               signature: settleResult.transaction,
             },
