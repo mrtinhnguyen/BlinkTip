@@ -1,62 +1,88 @@
 /**
- * X402 Funding Endpoint for Agent Wallet
+ * X402 Funding Endpoint for Agent Wallet (Base)
  *
  * GET /api/x402/fund-agent
  * - Returns agent wallet info for funding
  *
  * POST /api/x402/fund-agent
- * - x402 payment endpoint
- * - Anyone can fund the agent's wallet with USDC
+ * - x402 payment endpoint on Base
+ * - Anyone can fund the agent's wallet with USDC on Base
  * - Returns 402 Payment Required until payment is verified
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getOrCreateAgentWallet, getAgentBalance } from "@/agent/lib/services/cdp-wallet";
-import { X402PaymentHandler } from "x402-solana/server";
+import { getServerWalletAddress, getAgentBalanceBase } from "@/agent/lib/services/base/base-wallet";
+import { createThirdwebClient, defineChain } from "thirdweb";
+import { settlePayment, facilitator } from "thirdweb/x402";
 
 export const dynamic = "force-dynamic";
 
-// USDC mint addresses
-const SOLANA_NETWORK = process.env.NEXT_PUBLIC_NETWORK || 'solana-mainnet-beta';
-const IS_MAINNET = SOLANA_NETWORK === 'solana-mainnet-beta';
-const USDC_MINT = IS_MAINNET
-  ? "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" // Mainnet
-  : "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr"; // Devnet
+// Environment configuration
+const THIRDWEB_SECRET_KEY = process.env.THIRDWEB_SECRET_KEY!;
+const THIRDWEB_SERVER_WALLET = process.env.THIRDWEB_SERVER_WALLET_ADDRESS!;
+const BASE_CHAIN_ID = parseInt(process.env.BASE_CHAIN_ID || "8453"); // 8453 mainnet, 84532 Sepolia
+const BASE_RPC_URL = process.env.BASE_RPC_URL || "https://mainnet.base.org";
+
+// Token address on Base
+const BASE_USDC_TOKEN = process.env.BASE_USDC_TOKEN! as `0x${string}`; // 6 decimals
+
+// Initialize thirdweb client
+const client = createThirdwebClient({
+  secretKey: THIRDWEB_SECRET_KEY,
+});
+
+// Define Base chain
+const baseChain = defineChain({
+  id: BASE_CHAIN_ID,
+  rpc: BASE_RPC_URL,
+});
+
+// Create thirdweb facilitator
+const thirdwebFacilitator = facilitator({
+  client,
+  serverWalletAddress: THIRDWEB_SERVER_WALLET,
+  waitUntil: "confirmed", // Wait for on-chain confirmation
+});
 
 /**
  * GET - Return agent wallet info
  */
 export async function GET() {
   try {
-    const wallet = await getOrCreateAgentWallet();
-    const balance = await getAgentBalance();
+    const walletAddress = getServerWalletAddress();
+    const balance = await getAgentBalanceBase();
+    const networkName = BASE_CHAIN_ID === 8453 ? "base-mainnet" : "base-sepolia";
+    const explorerUrl = BASE_CHAIN_ID === 8453
+      ? `https://basescan.org/address/${walletAddress}`
+      : `https://sepolia.basescan.org/address/${walletAddress}`;
 
     return NextResponse.json({
       success: true,
-      message: "LinkTip Autonomous Agent Funding",
+      message: "LinkTip Autonomous Agent Funding (Base)",
       wallet: {
-        address: wallet.address,
-        network: IS_MAINNET ? "solana" : "solana-devnet",
+        address: walletAddress,
+        network: networkName,
+        chainId: BASE_CHAIN_ID,
         currentBalance: {
           eth: balance.balanceETH,
           usdc: balance.balanceUSDC,
         },
-        canTip: balance.canTip,
-        explorerUrl: IS_MAINNET
-          ? `https://explorer.solana.com/address/${wallet.address}`
-          : `https://explorer.solana.com/address/${wallet.address}?cluster=devnet`,
+        canTip: balance.balanceUSDC >= 0.01,
+        explorerUrl: explorerUrl,
       },
       fundingInstructions: {
         description:
-          "Fund the agent wallet to enable autonomous tipping of crypto creators",
+          "Fund the agent wallet to enable autonomous tipping of crypto creators on Base",
         acceptedTokens: ["USDC"],
         minimumAmount: 0.01,
         recommendedAmount: 1.0,
         tipPerCreator: 0.1,
         howToFund: [
-          "1. Send USDC devnet tokens directly to the agent wallet address above",
+          "1. Send USDC directly to the agent wallet address above on Base",
           "2. Or use the x402 payment protocol via POST to this endpoint",
-          "3. Get devnet USDC from: https://spl-token-faucet.com",
+          BASE_CHAIN_ID === 8453
+            ? "3. Get USDC from a DEX or bridge on Base"
+            : "3. Get testnet USDC from Base Sepolia faucet",
         ],
       },
       x402Endpoint: {
@@ -65,16 +91,16 @@ export async function GET() {
         queryParams: {
           amount: "Amount in USDC (e.g., 1.0)",
         },
-        description: "Use x402 protocol for payment-gated funding",
+        description: "Use x402 protocol for payment-gated funding on Base",
       },
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Error getting agent wallet info:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Unknown error",
+        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
@@ -82,105 +108,124 @@ export async function GET() {
 }
 
 /**
- * POST - x402 payment endpoint
+ * POST - x402 payment endpoint on Base
  */
 export async function POST(request: NextRequest) {
   try {
     // Get agent wallet address
-    const wallet = await getOrCreateAgentWallet();
-
-    // Create x402 handler with agent wallet address
-    const x402Handler = new X402PaymentHandler({
-      network: IS_MAINNET ? "solana" : "solana-devnet",
-      treasuryAddress: wallet.address,
-      facilitatorUrl: "https://facilitator.payai.network",
-    });
-
-    const paymentHeader = x402Handler.extractPayment(request.headers);
+    const walletAddress = getServerWalletAddress();
 
     // Get amount from query params
     const url = new URL(request.url);
-    const amount = url.searchParams.get("amount") || "1.0";
-    const amountInMicroUsdc = Math.floor(parseFloat(amount) * 1_000_000).toString();
+    const amount = parseFloat(url.searchParams.get("amount") || "1.0");
+    const token = url.searchParams.get("token") || "USDC";
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      process.env.NEXT_PUBLIC_APP_URL ||
-      "http://localhost:3000";
-    const resourceUrl =
-      `${baseUrl}/api/x402/fund-agent?amount=${amount}` as `${string}://${string}`;
+    // Construct resource URL
+    const resourceUrl = `${request.nextUrl.origin}${request.nextUrl.pathname}${request.nextUrl.search}`;
 
-    const paymentRequirements = await x402Handler.createPaymentRequirements({
-      price: {
-        amount: amountInMicroUsdc,
-        asset: {
-          address: USDC_MINT,
-          decimals: 6,
-        },
+    // Price configuration for x402
+    const priceConfig = {
+      amount: amount.toString(),
+      asset: {
+        address: BASE_USDC_TOKEN,
+        decimals: 6,
       },
-      network: IS_MAINNET ? "solana" : "solana-devnet",
-      config: {
-        description: "Fund LinkTip autonomous tipping agent",
-        resource: resourceUrl,
+    };
+
+    // Extract payment header from request
+    const paymentHeader = request.headers.get("x-payment");
+
+    // Determine network name
+    const networkName = BASE_CHAIN_ID === 8453 ? "base-mainnet" : "base-sepolia";
+
+    if (!paymentHeader) {
+      // Return 402 Payment Required
+      console.log("[Base x402 Fund Agent] Returning 402 Payment Required");
+      console.log(`  Amount: ${amount} ${token}`);
+      console.log(`  Wallet: ${walletAddress}`);
+
+      // Use settlePayment to get payment requirements
+      // This will return 402 with payment requirements
+      const result = await settlePayment({
+        resourceUrl,
+        method: "POST",
+        paymentData: undefined, // No payment data yet
+        payTo: walletAddress,
+        network: baseChain,
+        price: priceConfig,
+        facilitator: thirdwebFacilitator,
+        routeConfig: {
+          description: "Fund LinkTip autonomous tipping agent on Base",
+          mimeType: "application/json",
+          maxTimeoutSeconds: 300,
+        },
+      });
+
+      return NextResponse.json(
+        'responseBody' in result ? result.responseBody : { error: 'Payment required' },
+        {
+          status: result.status,
+          headers: result.responseHeaders,
+        }
+      );
+    }
+
+    // Process payment - X-PAYMENT header is present
+    console.log("[Base x402 Fund Agent] Processing payment...");
+    console.log(`  Amount: ${amount} ${token}`);
+    console.log(`  Wallet: ${walletAddress}`);
+
+    const result = await settlePayment({
+      resourceUrl,
+      method: "POST",
+      paymentData: paymentHeader,
+      payTo: walletAddress,
+      network: baseChain,
+      price: priceConfig,
+      facilitator: thirdwebFacilitator,
+      routeConfig: {
+        description: "Fund LinkTip autonomous tipping agent on Base",
+        mimeType: "application/json",
+        maxTimeoutSeconds: 300,
       },
     });
 
-    // If no payment header, return 402
-    if (!paymentHeader) {
-      const response = x402Handler.create402Response(paymentRequirements);
-      return NextResponse.json(response.body, { status: response.status });
+    if (result.status !== 200) {
+      const errorBody = 'responseBody' in result ? result.responseBody : { error: 'Payment failed' };
+      console.error("[Base x402 Fund Agent] Payment failed:", errorBody);
+      return NextResponse.json(errorBody, {
+        status: result.status,
+        headers: result.responseHeaders,
+      });
     }
 
-    // Verify payment
-    const verified = await x402Handler.verifyPayment(
-      paymentHeader,
-      paymentRequirements
-    );
-
-    if (!verified.isValid) {
-      return NextResponse.json(
-        { error: "Invalid payment", reason: verified.invalidReason },
-        { status: 402 }
-      );
-    }
-
-    // Settle payment
-    const settleResult = await x402Handler.settlePayment(
-      paymentHeader,
-      paymentRequirements
-    );
-
-    if (!settleResult.success) {
-      return NextResponse.json(
-        { error: "Payment settlement failed", reason: settleResult.errorReason },
-        { status: 500 }
-      );
-    }
-
-    console.log(
-      `[x402 Fund Agent] ✓ Payment settled: $${parseFloat(amount).toFixed(2)} USDC`
-    );
-    console.log(`[x402 Fund Agent] Transaction: ${settleResult.transaction}`);
+    console.log("[Base x402 Fund Agent] ✓ Payment settled successfully");
+    const transactionHash = result.paymentReceipt?.transaction || "unknown";
+    console.log(`[Base x402 Fund Agent] Transaction hash: ${transactionHash}`);
 
     // Get updated balance
-    const balance = await getAgentBalance();
+    const balance = await getAgentBalanceBase();
+
+    const explorerUrl = BASE_CHAIN_ID === 8453
+      ? `https://basescan.org/tx/${transactionHash}`
+      : `https://sepolia.basescan.org/tx/${transactionHash}`;
 
     return NextResponse.json({
       success: true,
-      message: "Agent wallet funded successfully!",
+      message: "Agent wallet funded successfully on Base!",
       payment: {
-        amount: parseFloat(amount),
-        token: "USDC",
-        transaction: settleResult.transaction,
-        network: IS_MAINNET ? "solana" : "solana-devnet",
+        amount: amount,
+        token: token,
+        transaction: transactionHash,
+        network: networkName,
       },
       wallet: {
-        address: wallet.address,
+        address: walletAddress,
         newBalance: {
           eth: balance.balanceETH,
           usdc: balance.balanceUSDC,
         },
-        explorerUrl: `https://explorer.solana.com/tx/${settleResult.transaction}?cluster=devnet`,
+        explorerUrl: explorerUrl,
       },
       impact: {
         potentialTips: Math.floor(balance.balanceUSDC / 0.1),
@@ -188,12 +233,12 @@ export async function POST(request: NextRequest) {
       },
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ x402 funding error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Unknown error",
+        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
